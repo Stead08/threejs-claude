@@ -27,8 +27,10 @@ export default defineConfig({
   testDir: 'e2e',
   // ロード（オフラインシンセレンダ）を含む起動フローのため長めに取る。
   timeout: 60_000,
+  // 既定の expect timeout はテスト全体(60s)より短くし、長い待ちが必要な箇所
+  // (プレイ到達判定)はアサーション側で個別に timeout を指定する。
   expect: {
-    timeout: 60_000,
+    timeout: 30_000,
   },
   fullyParallel: true,
   retries: isCI ? 1 : 0,

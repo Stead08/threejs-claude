@@ -59,9 +59,13 @@ function resizeCurrentScene(): void {
 }
 window.addEventListener('resize', resizeCurrentScene);
 
-/** ゲーム→シェルへの結果通知。ループを止めてリザルトへ遷移する。 */
+/** ゲーム→シェルへの結果通知。ループとシーン（HUD 含む）を破棄してリザルトへ遷移する。 */
 function handleFinished(statsJson: string): void {
   currentGame?.stop();
+  // dispose しないとデバッグ HUD（DOM 直更新）がリザルト画面の上に残留する。
+  currentScene?.dispose();
+  currentScene = null;
+  currentGame = null;
   shellStore.getState().setResult(statsJson);
 }
 

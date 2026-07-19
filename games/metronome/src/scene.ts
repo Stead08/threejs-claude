@@ -97,7 +97,9 @@ function createCueEntry(threeScene: Scene, disposables: Disposable[]): CueEntry 
   const material = createToonMaterial(COLOR_CUE_NEUTRAL);
   disposables.push(material);
   const mesh = new Mesh(CUE_GEOMETRY, material);
-  addOutline(mesh, 1.06, COLOR_OUTLINE);
+  const outline = addOutline(mesh, 1.06, COLOR_OUTLINE);
+  // 輪郭マテリアルは addOutline が新規生成して所有する（ジオメトリは共有）ため破棄登録する。
+  disposables.push(outline.material as Disposable);
   mesh.visible = false;
   threeScene.add(mesh);
   return {
@@ -196,7 +198,8 @@ export class MetronomeScene implements MinigameScene {
     this.#disposables.push(ringGeometry, ringMaterial);
     const ring = new Mesh(ringGeometry, ringMaterial);
     ring.position.set(RING_POS.x, RING_POS.y, RING_POS.z);
-    addOutline(ring, 1.05, COLOR_OUTLINE);
+    const ringOutline = addOutline(ring, 1.05, COLOR_OUTLINE);
+    this.#disposables.push(ringOutline.material as Disposable);
     this.#threeScene.add(ring);
 
     this.#cuePool.prealloc(CUE_CAPACITY, () => createCueEntry(this.#threeScene, this.#disposables));
@@ -276,6 +279,15 @@ export class MetronomeScene implements MinigameScene {
   }
 
   #judgeCue(cueIndex: number, judgment: number, errorMs: number): void {
+    // 統計は演出スロットの有無に依存させない（プール枯渇でスポーンを諦めたキューでも
+    // HUD の集計はリザルト側の core 統計と一致させる）。
+    if (judgment === 0) {
+      this.#stats.recordJust(errorMs);
+    } else {
+      // judgment === 1 (Safe)。仕様上 Judged は Just/Safe のみ発火する。
+      this.#stats.recordSafe(errorMs);
+    }
+
     const slot = findSlotByCueIndex(this.#cueSlots, cueIndex);
     if (slot === -1) {
       return;
@@ -284,16 +296,16 @@ export class MetronomeScene implements MinigameScene {
     if (entry === null || entry === undefined) {
       return;
     }
+    // 判定演出はヒット期待点（リング）から再生する。CueApproach と同一 tick で判定された
+    // 場合、まだ補間前でスポーン地点(上空)にいるため、ここでスナップしておく。
+    entry.mesh.position.set(RING_POS.x, RING_POS.y, RING_POS.z);
     if (judgment === 0) {
-      this.#stats.recordJust(errorMs);
       entry.phase = 'just';
       entry.phaseTimeSec = 0;
       entry.material.color.setHex(COLOR_CUE_JUST);
       this.#cameraRig.shake(SHAKE_JUST_STRENGTH);
-      this.#spawnStar(entry.mesh.position.x, entry.mesh.position.y, entry.mesh.position.z);
+      this.#spawnStar(RING_POS.x, RING_POS.y, RING_POS.z);
     } else {
-      // judgment === 1 (Safe)。仕様上 Judged は Just/Safe のみ発火する。
-      this.#stats.recordSafe(errorMs);
       entry.phase = 'safe';
       entry.phaseTimeSec = 0;
       entry.material.color.setHex(COLOR_CUE_SAFE);
@@ -301,6 +313,9 @@ export class MetronomeScene implements MinigameScene {
   }
 
   #missCue(cueIndex: number): void {
+    // 統計は演出スロットの有無に依存させない。
+    this.#stats.recordMiss();
+
     const slot = findSlotByCueIndex(this.#cueSlots, cueIndex);
     if (slot === -1) {
       return;
@@ -309,7 +324,6 @@ export class MetronomeScene implements MinigameScene {
     if (entry === null || entry === undefined) {
       return;
     }
-    this.#stats.recordMiss();
     entry.phase = 'miss';
     entry.phaseTimeSec = 0;
     entry.material.color.setHex(COLOR_CUE_MISS);

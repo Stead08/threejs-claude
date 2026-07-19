@@ -36,12 +36,23 @@ export interface SessionHandle {
 
 let initPromise: Promise<void> | null = null;
 
-/** wasm を初期化する。多重呼び出しは同一 Promise を返す。 */
+/**
+ * wasm を初期化する。多重呼び出しは同一 Promise を返す。
+ * 失敗時はキャッシュを破棄する — init() は .wasm の fetch を含む実ネットワーク操作で
+ * 一時的に失敗し得るため、rejected Promise を残すと「タイトルへ戻って再タップ」の
+ * リカバリ経路（apps/web）が回復不能になる。
+ */
 export function initWasm(): Promise<void> {
   if (initPromise === null) {
-    initPromise = (async (): Promise<void> => {
+    const attempt = (async (): Promise<void> => {
       await init();
     })();
+    attempt.catch(() => {
+      if (initPromise === attempt) {
+        initPromise = null;
+      }
+    });
+    initPromise = attempt;
   }
   return initPromise;
 }

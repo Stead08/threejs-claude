@@ -7,6 +7,9 @@ use midly::{Format, Header, MetaMessage, MidiMessage, Smf, Timing, TrackEvent, T
 const PPQ: u16 = 480;
 /// 総拍数（64 小節 × 4 拍）。
 const BEATS: u32 = 256;
+/// カウントイン拍数（2 小節）。CLICK のみ鳴らし CUES を置かない。
+/// 曲頭のキューに接近時間とテンポの手がかり（8 クリック）を保証する。
+const COUNT_IN_BEATS: u32 = 8;
 /// 拍あたりティック数（= PPQ）。
 const TICKS_PER_BEAT: u32 = PPQ as u32;
 /// ノート長（1/8 拍 = 60 ティック）。
@@ -18,19 +21,27 @@ const TEMPO_US_PER_BEAT: u32 = 500_000;
 ///
 /// - SMF Format 1、PPQ=480、120BPM 固定、4/4、64 小節 = 256 拍。
 /// - Track 0: テンポ・拍子メタのみ。
-/// - Track "CLICK"（ch9）: 毎拍 key37 vel100、小節頭は key38 vel127。
-/// - Track "CUES"（ch0）: 毎拍 key36、小節頭は key38。
+/// - Track "CLICK"（ch9）: 拍 0 から毎拍 key37 vel100、小節頭は key38 vel127。
+/// - Track "CUES"（ch0）: 拍 8（カウントイン 2 小節の後）から毎拍 key36、小節頭は key38。
 pub fn build_metronome_midi() -> Vec<u8> {
     let header = Header::new(Format::Parallel, Timing::Metrical(u15::new(PPQ)));
     let mut smf = Smf::new(header);
 
     smf.tracks.push(build_meta_track());
-    // CLICK: ch9（パーカッション）。通常拍 key37/vel100、小節頭 key38/vel127。
+    // CLICK: ch9（パーカッション）。通常拍 key37/vel100、小節頭 key38/vel127。拍 0 から。
     smf.tracks
-        .push(build_note_track(b"CLICK", 9, 37, 100, 38, 127));
+        .push(build_note_track(b"CLICK", 9, 0, 37, 100, 38, 127));
     // CUES: ch0。通常拍 key36、小節頭 key38。レンダ時に除外されるトラック。
-    smf.tracks
-        .push(build_note_track(b"CUES", 0, 36, 100, 38, 100));
+    // カウントイン中はキューを置かず、曲頭キューにも全接近時間を保証する。
+    smf.tracks.push(build_note_track(
+        b"CUES",
+        0,
+        COUNT_IN_BEATS,
+        36,
+        100,
+        38,
+        100,
+    ));
 
     let mut buf = Vec::new();
     smf.write_std(&mut buf).expect("SMF の書き込みに失敗");
@@ -56,10 +67,11 @@ fn build_meta_track() -> Vec<TrackEvent<'static>> {
     ]
 }
 
-/// 毎拍ノートを持つトラックを生成する。小節頭（4 拍ごと）だけ key/vel を差し替える。
+/// `start_beat` から毎拍ノートを持つトラックを生成する。小節頭（4 拍ごと）だけ key/vel を差し替える。
 fn build_note_track(
     name: &'static [u8],
     channel: u8,
+    start_beat: u32,
     key_normal: u8,
     vel_normal: u8,
     key_bar: u8,
@@ -75,7 +87,7 @@ fn build_note_track(
 
     // 絶対ティックからデルタタイムへ変換する。
     let mut last_tick: u32 = 0;
-    for beat in 0..BEATS {
+    for beat in start_beat..BEATS {
         let bar_head = beat.is_multiple_of(4);
         let (key, vel) = if bar_head {
             (key_bar, vel_bar)
@@ -162,11 +174,43 @@ mod tests {
         });
         assert!(has_tempo && has_timesig, "Track 0 のメタが不足");
 
-        // CLICK トラックの NoteOn 数 = 256（毎拍）。
+        // CLICK トラックの NoteOn 数 = 256（毎拍・拍 0 から）。
         let click_ons = count_note_ons(&smf.tracks[1]);
         assert_eq!(click_ons, BEATS as usize, "CLICK の NoteOn 数が 256 でない");
+        // CUES はカウントイン 2 小節を除く 248 拍。
         let cues_ons = count_note_ons(&smf.tracks[2]);
-        assert_eq!(cues_ons, BEATS as usize, "CUES の NoteOn 数が 256 でない");
+        assert_eq!(
+            cues_ons,
+            (BEATS - COUNT_IN_BEATS) as usize,
+            "CUES の NoteOn 数が 248 でない"
+        );
+    }
+
+    #[test]
+    fn cues_start_after_count_in() {
+        let bytes = build_metronome_midi();
+        let smf = Smf::parse(&bytes).unwrap();
+
+        // CUES の最初の NoteOn は拍 8（tick 3840）で、小節頭キー(38)。
+        let mut tick: u32 = 0;
+        let first = smf.tracks[2]
+            .iter()
+            .find_map(|ev| {
+                tick += ev.delta.as_int();
+                match ev.kind {
+                    TrackEventKind::Midi {
+                        message: MidiMessage::NoteOn { key, vel },
+                        ..
+                    } if vel.as_int() > 0 => Some((tick, key.as_int())),
+                    _ => None,
+                }
+            })
+            .unwrap();
+        assert_eq!(
+            first,
+            (COUNT_IN_BEATS * TICKS_PER_BEAT, 38),
+            "CUES の開始位置/キーがカウントイン仕様と不一致"
+        );
     }
 
     #[test]

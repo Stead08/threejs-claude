@@ -18,8 +18,14 @@ function createMemoryStorage(): StorageLike {
 }
 
 function resolveStorage(): StorageLike {
-  if (typeof globalThis.localStorage !== 'undefined') {
-    return globalThis.localStorage;
+  // Cookie ブロック環境（サードパーティ iframe 等）では localStorage への
+  // 「プロパティアクセス自体」が SecurityError を throw するため try で包む。
+  try {
+    if (typeof globalThis.localStorage !== 'undefined') {
+      return globalThis.localStorage;
+    }
+  } catch {
+    // メモリフォールバックへ。
   }
   return createMemoryStorage();
 }

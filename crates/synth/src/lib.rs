@@ -120,10 +120,10 @@ pub fn render_note(
     let mut synth = new_synthesizer(&sound_font, sample_rate)?;
 
     let channel: i32 = if percussion { 9 } else { 0 };
-    if !percussion {
-        // Program Change（0xC0）でプリセット（パッチ番号）を選択。
-        synth.process_midi_message(channel, 0xC0, preset as i32, 0);
-    }
+    // Program Change（0xC0）でプリセットを明示選択する。ch9 でも bank128 内の
+    // パッチ選択として機能する（省略すると preset 引数が無視され、bank128:preset0 に
+    // 固定されてしまう — 現状 preset=0 のみだが契約どおり常に反映する）。
+    synth.process_midi_message(channel, 0xC0, preset as i32, 0);
 
     let dur_frames = (duration_sec * sample_rate as f64).round().max(0.0) as usize;
     let tail_frames = (0.5 * sample_rate as f64).round() as usize;
@@ -283,28 +283,36 @@ mod tests {
     #[test]
     fn exclude_track_changes_waveform() {
         let (midi, sf2) = read_assets();
-        // 全体レンダは重いので、先頭の一部フレームだけを比較して差異を検出する。
-        let cmp_frames = SR as usize * 2; // 2 秒ぶん
+        // 全体レンダは重いので一部フレームだけ比較する。CUES ノートはカウントイン
+        // 2 小節（4.0 秒 @120BPM）の後から始まるため、4〜6 秒の窓で差異を検出する。
+        let cmp_start = SR as usize * 4;
+        let cmp_end = SR as usize * 6;
 
         let mut with_cues = SongRenderer::new(&midi, &sf2, SR, None).expect("new 失敗");
-        while with_cues.rendered_frames() < cmp_frames && !with_cues.render_chunk(SR as usize) {}
+        while with_cues.rendered_frames() < cmp_end && !with_cues.render_chunk(SR as usize) {}
         let a = with_cues.into_rendered();
 
         let mut without_cues = SongRenderer::new(&midi, &sf2, SR, Some("CUES")).expect("new 失敗");
-        while without_cues.rendered_frames() < cmp_frames && !without_cues.render_chunk(SR as usize)
-        {
-        }
+        while without_cues.rendered_frames() < cmp_end && !without_cues.render_chunk(SR as usize) {}
         let b = without_cues.into_rendered();
 
-        let n = cmp_frames.min(a.left.len()).min(b.left.len());
-        let differs = a.left[..n]
+        let n = cmp_end.min(a.left.len()).min(b.left.len());
+        assert!(n > cmp_start, "比較窓ぶんのフレームがレンダされていない");
+        let differs = a.left[cmp_start..n]
             .iter()
-            .zip(&b.left[..n])
+            .zip(&b.left[cmp_start..n])
             .any(|(x, y)| (x - y).abs() > 1e-6);
         assert!(
             differs,
             "CUES 除外の有無で波形が変化しない（除外処理が効いていない）"
         );
+
+        // カウントイン区間（CUES ノートなし）は除外の有無で完全一致するはず。
+        let same_head = a.left[..cmp_start]
+            .iter()
+            .zip(&b.left[..cmp_start])
+            .all(|(x, y)| (x - y).abs() <= 1e-6);
+        assert!(same_head, "カウントイン区間の波形が除外の有無で一致しない");
     }
 
     #[test]

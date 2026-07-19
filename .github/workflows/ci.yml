@@ -36,6 +36,16 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build:wasm
+      # crates/wasm は wasm-pack の wasm-opt 自動実行を無効化している
+      # (開発サンドボックスで binaryen の DL が egress 遮断されるため)。
+      # CI では apt の binaryen で明示的にサイズ最適化し、gz サイズを記録する。
+      - run: sudo apt-get update && sudo apt-get install -y binaryen
+      - run: |
+          wasm-opt -Os -all \
+            -o packages/engine/wasm-pkg/rhythm_wasm_bg.wasm \
+            packages/engine/wasm-pkg/rhythm_wasm_bg.wasm
+          gzip -9 -c packages/engine/wasm-pkg/rhythm_wasm_bg.wasm | wc -c \
+            | xargs -I{} echo "wasm gz size: {} bytes (budget 400000)"
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test

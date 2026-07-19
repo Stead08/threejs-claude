@@ -82,7 +82,7 @@ module.exports = {
   options: {
     doNotFollow: { path: 'node_modules' },
     tsConfig: { fileName: 'tsconfig.base.json' },
-    exclude: { path: '(wasm-pkg|\\.test\\.ts$|e2e/)' },
+    exclude: { path: '(wasm-pkg|\\.test\\.ts$|e2e/|/dist/|/test-results/|/playwright-report/)' },
     enhancedResolveOptions: {
       exportsFields: ['exports'],
       conditionNames: ['import', 'require', 'default', 'types'],

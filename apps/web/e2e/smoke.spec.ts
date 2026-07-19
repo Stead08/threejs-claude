@@ -26,7 +26,9 @@ test.describe('metronome smoke', () => {
     // 曲レンダは wasm 側で完了するため一瞬で終わる可能性もあるが、出現していた形跡
     // （もしくは既にプレイへ抜けている）のどちらでも後続のプレイ到達判定で担保する。
     const loadingBar = page.getByRole('progressbar');
-    await loadingBar.waitFor({ state: 'visible' }).catch(() => {
+    // timeout を明示しないと既定の長い待ちがそのまま適用され、「高速完了時は無視」の
+    // 意図（catch）が機能しない。短い timeout で待ち、出なければ次段階の判定へ進む。
+    await loadingBar.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {
       // 非常に高速に完了した場合は見えないまま次段階へ進んでいるため無視する。
     });
 

@@ -36,10 +36,15 @@ interface Calibration {
 }
 
 function readCalibration(): Calibration {
-  if (typeof localStorage === 'undefined') {
-    return { inputOffsetMs: 0, videoOffsetMs: 0 };
+  // Cookie ブロック環境では localStorage へのアクセス自体が throw するため try で包む。
+  try {
+    if (typeof localStorage !== 'undefined') {
+      return new CalibrationStore(localStorage).get();
+    }
+  } catch {
+    // 既定値フォールバックへ。
   }
-  return new CalibrationStore(localStorage).get();
+  return { inputOffsetMs: 0, videoOffsetMs: 0 };
 }
 
 /** `Minigame` 契約の metronome 実装。 */

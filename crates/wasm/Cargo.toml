@@ -17,9 +17,9 @@ js-sys = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
-# サンドボックス環境では GitHub Releases からの binaryen (wasm-opt) ダウンロードが
-# egress ポリシーで遮断される（403）。wasm-opt はサイズ最適化のみを担う任意の
-# ポストプロセスであり、無効化しても cdylib の出力は正しく生成される。
-# CI 等ネットワークが開いている環境では削除して最適化を有効にしてよい。
+# 開発サンドボックスでは GitHub Releases からの binaryen (wasm-opt) ダウンロードが
+# egress ポリシーで遮断される（403）ため、wasm-pack の自動 wasm-opt を無効化している。
+# サイズ最適化は CI (.github/workflows/ci.yml の web ジョブ) が apt の binaryen で
+# 明示的に `wasm-opt -Os` を実行して補う。ここを外すと遮断環境で build:wasm が失敗する。
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = false

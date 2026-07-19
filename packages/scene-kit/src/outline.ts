@@ -9,8 +9,8 @@ const DEFAULT_COLOR: ColorRepresentation = 0x000000;
 
 /**
  * mesh のジオメトリを再利用したインバーテッドハル（裏面のみ描画・拡大）を子として追加する。
- * 返り値の輪郭メッシュは mesh.children に含まれるため、mesh の破棄時に一緒に破棄される
- * （ジオメトリ自体は mesh と共有のため、輪郭メッシュ側の dispose は不要）。
+ * ジオメトリは mesh と共有のため輪郭側での dispose は不要だが、**マテリアルは輪郭が
+ * 新規生成して所有する**ので、呼び側が返り値の `.material` を破棄経路に登録すること。
  */
 export function addOutline(
   mesh: Mesh,

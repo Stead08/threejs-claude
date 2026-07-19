@@ -97,9 +97,14 @@ export class AudioEngine {
     }
   }
 
-  /** AudioContext を resume する。 */
+  /**
+   * AudioContext を resume する。
+   * iOS は電話着信・Siri 等で非標準の 'interrupted' 状態になるため、
+   * 'suspended' 限定にせず「running/closed 以外」で試みる。
+   */
   async resume(): Promise<void> {
-    if (this.#ctx.state === 'suspended') {
+    const state = this.#ctx.state as string;
+    if (state !== 'running' && state !== 'closed') {
       await this.#ctx.resume();
     }
   }
@@ -120,9 +125,26 @@ export class AudioEngine {
         });
       }
     };
+    // iOS は電話着信・Siri・他アプリの音声フォーカス取得で AudioContext が
+    // 'interrupted'（非標準）になり、visibilitychange を伴わず止まることがある。
+    // statechange で「可視なのに running でない」を検出して復帰を試みる。
+    const stateHandler = (): void => {
+      const state = this.#ctx.state as string;
+      if (!doc.hidden && state !== 'running' && state !== 'closed') {
+        this.resume()
+          .then(() => {
+            onResume?.();
+          })
+          .catch(() => {
+            // 中断継続中の resume 失敗は無視する（次の statechange で再試行される）。
+          });
+      }
+    };
     doc.addEventListener('visibilitychange', handler);
+    this.#ctx.addEventListener('statechange', stateHandler);
     return (): void => {
       doc.removeEventListener('visibilitychange', handler);
+      this.#ctx.removeEventListener('statechange', stateHandler);
     };
   }
 }
