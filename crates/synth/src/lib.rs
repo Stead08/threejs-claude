@@ -271,12 +271,14 @@ mod tests {
             expected,
             "右チャンネル長が total_frames と不一致"
         );
-        // 曲長 ≈ 128 秒 + テイル 1 秒 → total_frames ≈ 129 * SR。
-        let approx = (129.0 * SR as f64) as usize;
-        let diff = expected.abs_diff(approx);
+        // 曲はカウントイン 2 小節 + 本編 28 小節 = 120 拍 @120BPM ≈ 60 秒 + テイル 1 秒。
+        // 最終イベント位置には多少の遊びがある（全音符の実発音長など）ため、
+        // 厳密値ではなく「約 1 分」の範囲（55〜70 秒）で検証する。
+        let lo = (55.0 * SR as f64) as usize;
+        let hi = (70.0 * SR as f64) as usize;
         assert!(
-            diff < SR as usize,
-            "total_frames が想定と乖離: {expected} vs {approx}"
+            (lo..=hi).contains(&expected),
+            "total_frames が約 1 分の想定から乖離: {expected}（{lo}〜{hi} を期待）"
         );
     }
 
@@ -284,7 +286,8 @@ mod tests {
     fn exclude_track_changes_waveform() {
         let (midi, sf2) = read_assets();
         // 全体レンダは重いので一部フレームだけ比較する。CUES ノートはカウントイン
-        // 2 小節（4.0 秒 @120BPM）の後から始まるため、4〜6 秒の窓で差異を検出する。
+        // 2 小節（4.0 秒 @120BPM）の後、本編 1 小節目の 1・3 拍（4.0 秒・5.0 秒）に
+        // あるため、4〜6 秒の窓で差異を検出できる。
         let cmp_start = SR as usize * 4;
         let cmp_end = SR as usize * 6;
 
@@ -313,6 +316,16 @@ mod tests {
             .zip(&b.left[..cmp_start])
             .all(|(x, y)| (x - y).abs() <= 1e-6);
         assert!(same_head, "カウントイン区間の波形が除外の有無で一致しない");
+    }
+
+    #[test]
+    fn render_peak_stays_below_clipping() {
+        // 4 トラック（DRUMS/BASS/LEAD/HARM）合算でもクリップしないこと（M1 楽曲契約）。
+        // ゲーム再生と同条件（CUES 除外）で全曲をレンダしてピークを確認する。
+        let (midi, sf2) = read_assets();
+        let out = render_midi(&midi, &sf2, SR, Some("CUES")).expect("render_midi 失敗");
+        let p = peak(&out.left).max(peak(&out.right));
+        assert!(p < 1.0, "レンダ結果がクリップしている: peak={p}");
     }
 
     #[test]

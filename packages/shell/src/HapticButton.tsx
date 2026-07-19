@@ -9,6 +9,7 @@
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 import { detectHapticsMode, hapticTap } from "@rhythm/engine";
 import { HapticSwitch } from "./HapticSwitch";
+import { uiTapSound } from "./ui-sfx";
 
 export interface HapticButtonProps {
   onClick: () => void;
@@ -34,7 +35,10 @@ export function HapticButton({
       <button
         type="button"
         onClick={onClick}
-        onPointerDown={(): void => hapticTap()}
+        onPointerDown={(): void => {
+          hapticTap();
+          uiTapSound();
+        }}
         disabled={disabled}
         aria-label={ariaLabel}
         style={style}
@@ -50,6 +54,8 @@ export function HapticButton({
       aria-label={ariaLabel}
       aria-disabled={disabled || undefined}
       onClick={disabled ? undefined : onClick}
+      // ハプティックはスイッチ側が担うため、ここでは UI 効果音のみ鳴らす。
+      onPointerDown={disabled ? undefined : (): void => uiTapSound()}
       // textAlign は button の UA 既定（中央寄せ）を再現する。position はスイッチの重ね先。
       style={{ position: "relative", textAlign: "center", ...style }}
     >

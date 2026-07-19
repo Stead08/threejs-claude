@@ -1,10 +1,11 @@
-// タイトル画面。画面全体がタップボタン（「タップではじめる」）+ 右上に設定歯車。
+// タイトル画面。画面全体がタップボタン（「タップではじめる」）+ 右上に設定歯車 + 下部に「あそびかた」。
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import { theme } from "../theme";
 import { useShellStore } from "../store";
 import { HapticButton } from "../HapticButton";
+import { TUTORIAL_SEEN_KEY } from "./TutorialScreen";
 
 export interface TitleScreenProps {
   onStart: () => Promise<void>;
@@ -12,7 +13,20 @@ export interface TitleScreenProps {
 
 export function TitleScreen({ onStart }: TitleScreenProps): ReactElement {
   const openSettings = useShellStore((s) => s.openSettings);
+  const openTutorial = useShellStore((s) => s.openTutorial);
   const [starting, setStarting] = useState(false);
+
+  useEffect((): void => {
+    // 初回訪問時は自動でチュートリアルを開く。openTutorial は冪等なので
+    // StrictMode の二重実行でも問題ない。localStorage 不可環境では自動表示しない。
+    try {
+      if (globalThis.localStorage.getItem(TUTORIAL_SEEN_KEY) === null) {
+        openTutorial();
+      }
+    } catch {
+      // Cookie ブロック環境等ではアクセス自体が throw するため握りつぶす。
+    }
+  }, [openTutorial]);
 
   const handleStart = (): void => {
     if (starting) {
@@ -94,6 +108,24 @@ export function TitleScreen({ onStart }: TitleScreenProps): ReactElement {
         }}
       >
         ⚙
+      </HapticButton>
+      <HapticButton
+        onClick={openTutorial}
+        style={{
+          position: "fixed",
+          bottom: "max(20px, env(safe-area-inset-bottom))",
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "10px 28px",
+          borderRadius: "999px",
+          border: `1px solid ${theme.border}`,
+          background: theme.bgPanelAlt,
+          color: theme.fgDim,
+          fontSize: "4vw",
+          zIndex: 2,
+        }}
+      >
+        あそびかた
       </HapticButton>
     </div>
   );
