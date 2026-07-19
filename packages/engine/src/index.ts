@@ -4,7 +4,7 @@ export { AudioClock, fromAudioContext } from "./clock";
 export type { ClockSources } from "./clock";
 
 export { AudioEngine } from "./audio";
-export type { AudioEngineOptions, VisibilityDocument } from "./audio";
+export type { AudioEngineOptions, UnlockOptions, VisibilityDocument } from "./audio";
 
 export { InputQueue } from "./input";
 export type { InputQueueOptions } from "./input";

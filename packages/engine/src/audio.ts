@@ -18,6 +18,19 @@ export interface AudioEngineOptions {
   audioElementFactory?: () => HTMLAudioElement;
 }
 
+export interface UnlockOptions {
+  /** unlock 内部の段階通知（テレメトリー用）。 */
+  onStep?: (step: string) => void;
+}
+
+/**
+ * resume() 待ちの上限。iOS Safari では resume() の Promise が state 遷移後も解決しない
+ * ことがある（実測で 90 秒以上ロードが止まった事例あり）ため、これを超えたら先へ進む。
+ * running 未達のまま進んでも、statechange の自動リカバリ（attachVisibilityAutoSuspend）が
+ * 後から resume を再試行する。
+ */
+const RESUME_TIMEOUT_MS = 3_000;
+
 /** Web Audio 再生エンジン。 */
 export class AudioEngine {
   readonly #ctx: AudioContext;
@@ -37,10 +50,16 @@ export class AudioEngine {
   /**
    * ユーザジェスチャ内で呼ぶ。resume + 無音バッファ 1 発 + 無音 <audio loop> 再生開始で
    * iOS のオーディオアンロックとサイレントスイッチ対策を行う。
+   * iOS Safari では resume()/play() の Promise が解決しないまま残ることがあるため、
+   * ここで無期限に待たない（詳細は #resumeWithRecovery と RESUME_TIMEOUT_MS のコメント）。
    */
-  async unlock(): Promise<void> {
-    if (this.#ctx.state === "suspended") {
-      await this.#ctx.resume();
+  async unlock(options: UnlockOptions = {}): Promise<void> {
+    const step = options.onStep ?? ((): void => {});
+    const state = this.#ctx.state as string;
+    if (state !== "running" && state !== "closed") {
+      step("resume:start");
+      await this.#resumeWithRecovery();
+      step(`resume:done:${this.#ctx.state}`);
     }
     // 無音バッファを 1 発鳴らしてアンロックを確実にする。
     const buffer = this.#ctx.createBuffer(1, 1, this.#ctx.sampleRate);
@@ -48,16 +67,50 @@ export class AudioEngine {
     source.buffer = buffer;
     source.connect(this.#ctx.destination);
     source.start(0);
-    // 無音 <audio loop> をメディア再生カテゴリへ切り替えるために再生する。
+    // 無音 <audio loop> をメディア再生カテゴリへ切り替えるために再生開始する。
+    // iOS Safari では play() の Promise が解決しないことがあるため await しない
+    // （カテゴリ切替はベストエフォートで、ロード進行をこれに賭けない）。
     if (this.#silentAudio === null) {
       this.#silentAudio = this.#createAudioElement();
       this.#silentAudio.loop = true;
     }
-    try {
-      await this.#silentAudio.play();
-    } catch {
+    step("silent-audio:play");
+    this.#silentAudio.play().catch(() => {
       // 再生失敗（自動再生ブロック等）は致命ではないので無視する。
-    }
+    });
+  }
+
+  /**
+   * resume を試み、「resume() の解決 / statechange で running 検知 / タイムアウト」の
+   * いずれか最初の 1 つで完了する。iOS Safari（WebKit）では state が running へ遷移した
+   * 後も resume() の Promise が解決しないバグがあり、素朴に await すると起動フローが
+   * 数十秒〜無期限に停止するため。
+   */
+  #resumeWithRecovery(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      let done = false;
+      const onState = (): void => {
+        if ((this.#ctx.state as string) === "running") {
+          finish();
+        }
+      };
+      const timer = setTimeout((): void => {
+        finish();
+      }, RESUME_TIMEOUT_MS);
+      const finish = (): void => {
+        if (done) {
+          return;
+        }
+        done = true;
+        clearTimeout(timer);
+        this.#ctx.removeEventListener("statechange", onState);
+        resolve();
+      };
+      this.#ctx.addEventListener("statechange", onState);
+      this.#ctx.resume().then(finish, finish);
+      // resume() 呼び出しの同期処理内で既に running へ遷移済みの場合を拾う。
+      onState();
+    });
   }
 
   /** レンダ済み PCM（左右）を AudioBuffer 化する。 */

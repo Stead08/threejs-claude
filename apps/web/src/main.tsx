@@ -89,7 +89,11 @@ async function startGame(): Promise<void> {
     audioState: audioEngine.context.state,
   }));
   try {
-    await audioEngine.unlock();
+    await audioEngine.unlock({
+      onStep: (step: string): void => {
+        mark(`audio:unlock:${step}`);
+      },
+    });
     mark("audio:unlocked", {
       audioState: audioEngine.context.state,
       sampleRate: audioEngine.context.sampleRate,
