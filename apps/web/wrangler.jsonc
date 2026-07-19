@@ -7,6 +7,6 @@
   "assets": {
     "directory": "./dist",
     // SPA なので未知パスは index.html にフォールバックさせる（200 で返す）。
-    "not_found_handling": "single-page-application"
-  }
+    "not_found_handling": "single-page-application",
+  },
 }

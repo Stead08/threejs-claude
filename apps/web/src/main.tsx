@@ -5,21 +5,18 @@
 //         → MinigameContext.onFinished(statsJson) → store へ結果 → appState='result'
 //         → 「もういちど」→ 再スタート
 
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import {
-  AudioEngine,
-  fromAudioContext,
-} from '@rhythm/engine';
-import type { AudioClock, Minigame, MinigameContext, MinigameScene } from '@rhythm/engine';
-import { AppShell, shellStore } from '@rhythm/shell';
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { AudioEngine, fromAudioContext } from "@rhythm/engine";
+import type { AudioClock, Minigame, MinigameContext, MinigameScene } from "@rhythm/engine";
+import { AppShell, shellStore } from "@rhythm/shell";
 
 /** ゲームレジストリ。動的 import によりコード分割される（M0 は metronome の 1 本のみ）。 */
 const games: Record<string, () => Promise<{ default: Minigame }>> = {
-  metronome: () => import('@rhythm/game-metronome'),
+  metronome: () => import("@rhythm/game-metronome"),
 };
 
-const ACTIVE_GAME_ID = 'metronome';
+const ACTIVE_GAME_ID = "metronome";
 const MAX_DEVICE_PIXEL_RATIO = 2;
 
 function requireCanvas(id: string): HTMLCanvasElement {
@@ -38,8 +35,8 @@ function requireElement(id: string): HTMLElement {
   return el;
 }
 
-const canvas = requireCanvas('game');
-const rootEl = requireElement('root');
+const canvas = requireCanvas("game");
+const rootEl = requireElement("root");
 
 // AudioEngine/AudioClock はアプリ全体で単一。MinigameContext 経由でゲームへ渡す。
 const audioEngine = new AudioEngine();
@@ -57,7 +54,7 @@ function resizeCurrentScene(): void {
   const dpr = Math.min(window.devicePixelRatio || 1, MAX_DEVICE_PIXEL_RATIO);
   currentScene.resize(window.innerWidth, window.innerHeight, dpr);
 }
-window.addEventListener('resize', resizeCurrentScene);
+window.addEventListener("resize", resizeCurrentScene);
 
 /** ゲーム→シェルへの結果通知。ループとシーン（HUD 含む）を破棄してリザルトへ遷移する。 */
 function handleFinished(statsJson: string): void {
@@ -80,7 +77,7 @@ async function startGame(): Promise<void> {
 
     const state = shellStore.getState();
     state.setLoadProgress(0);
-    state.setAppState('loading');
+    state.setAppState("loading");
 
     const loadGame = games[ACTIVE_GAME_ID];
     if (loadGame === undefined) {
@@ -105,11 +102,11 @@ async function startGame(): Promise<void> {
     currentScene = scene;
     resizeCurrentScene();
 
-    shellStore.getState().setAppState('play');
+    shellStore.getState().setAppState("play");
     game.start();
   } catch (err) {
     // ロード/開始に失敗したらタイトルへ戻す（次のタップでやり直せる）。
-    console.error('[main] failed to start game', err);
+    console.error("[main] failed to start game", err);
     shellStore.getState().resetToTitle();
     throw err;
   }

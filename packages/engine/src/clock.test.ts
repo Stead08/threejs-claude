@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { AudioClock, type ClockSources } from './clock';
+import { describe, expect, it } from "vitest";
+import { AudioClock, type ClockSources } from "./clock";
 
 /** 可変な時刻ソースを組み立てるヘルパ。 */
 function makeSources(state: {
@@ -14,15 +14,15 @@ function makeSources(state: {
   };
 }
 
-describe('AudioClock', () => {
-  it('outputTimestamp の初回サンプルを offset に採用する', () => {
+describe("AudioClock", () => {
+  it("outputTimestamp の初回サンプルを offset に採用する", () => {
     const state = { perfMs: 0, audioSec: 0, ts: { contextTime: 3.5, performanceTime: 1000 } };
     const clock = new AudioClock(makeSources(state));
     // offset = contextTime - performanceTime/1000 = 3.5 - 1.0 = 2.5
     expect(clock.offset).toBeCloseTo(2.5, 9);
   });
 
-  it('perfToAudio = perfMs/1000 + offset', () => {
+  it("perfToAudio = perfMs/1000 + offset", () => {
     const state = { perfMs: 0, audioSec: 0, ts: { contextTime: 2.0, performanceTime: 500 } };
     const clock = new AudioClock(makeSources(state));
     // offset = 2.0 - 0.5 = 1.5
@@ -30,7 +30,7 @@ describe('AudioClock', () => {
     expect(clock.perfToAudio(0)).toBeCloseTo(1.5, 9);
   });
 
-  it('2 サンプル目以降を EMA(α=0.1) で平滑化する', () => {
+  it("2 サンプル目以降を EMA(α=0.1) で平滑化する", () => {
     // contextTime - performanceTime/1000 = offset。performanceTime は ms。
     const state = { perfMs: 0, audioSec: 0, ts: { contextTime: 1.5, performanceTime: 500 } };
     const clock = new AudioClock(makeSources(state));
@@ -55,7 +55,7 @@ describe('AudioClock', () => {
     expect(clock.offset).toBeCloseTo(1.19, 9);
   });
 
-  it('outputTimestamp が null ならフォールバック(currentTime - perfNow/1000)', () => {
+  it("outputTimestamp が null ならフォールバック(currentTime - perfNow/1000)", () => {
     const state = { perfMs: 1000, audioSec: 5, ts: null };
     const clock = new AudioClock(makeSources(state));
     // offset = 5 - 1.0 = 4.0
@@ -63,17 +63,21 @@ describe('AudioClock', () => {
     expect(clock.perfToAudio(2000)).toBeCloseTo(2.0 + 4.0, 9);
   });
 
-  it('0 値ペアはフォールバック扱い', () => {
+  it("0 値ペアはフォールバック扱い", () => {
     const state = { perfMs: 500, audioSec: 3, ts: { contextTime: 0, performanceTime: 0 } };
     const clock = new AudioClock(makeSources(state));
     // フォールバック: 3 - 0.5 = 2.5
     expect(clock.offset).toBeCloseTo(2.5, 9);
   });
 
-  it('reset() は EMA 履歴を破棄して新しい対応を即時採用する', () => {
+  it("reset() は EMA 履歴を破棄して新しい対応を即時採用する", () => {
     // suspended 中（audio 時計停止・currentTime=0）に構築 → フォールバック offset は
     // ページ経過時間ぶんズレる（unlock 前のタイトル待機を再現）。
-    const state = { perfMs: 60000, audioSec: 0, ts: null as { contextTime: number; performanceTime: number } | null };
+    const state = {
+      perfMs: 60000,
+      audioSec: 0,
+      ts: null as { contextTime: number; performanceTime: number } | null,
+    };
     const clock = new AudioClock(makeSources(state));
     expect(clock.offset).toBeCloseTo(-60.0, 9); // 0 - 60 = -60（誤った対応）
 
@@ -91,7 +95,7 @@ describe('AudioClock', () => {
     expect(clock.perfToAudio(60600)).toBeCloseTo(0.6, 9);
   });
 
-  it('reset() は resume 後の平行移動した対応へ EMA を待たず追従する', () => {
+  it("reset() は resume 後の平行移動した対応へ EMA を待たず追従する", () => {
     const state = { perfMs: 0, audioSec: 0, ts: { contextTime: 10.0, performanceTime: 10000 } };
     const clock = new AudioClock(makeSources(state));
     expect(clock.offset).toBeCloseTo(0.0, 9);

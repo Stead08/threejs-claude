@@ -12,21 +12,21 @@ export interface StorageLike {
   setItem(key: string, value: string): void;
 }
 
-const CALIBRATION_KEY = 'rhythm.calibration.v1';
+const CALIBRATION_KEY = "rhythm.calibration.v1";
 const DEFAULT_CALIBRATION: Calibration = { inputOffsetMs: 0, videoOffsetMs: 0 };
 
 function coerceNumber(value: unknown, fallback: number): number {
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
 function normalize(parsed: unknown): Calibration {
-  if (typeof parsed !== 'object' || parsed === null) {
+  if (typeof parsed !== "object" || parsed === null) {
     return { ...DEFAULT_CALIBRATION };
   }
   const obj = parsed as Record<string, unknown>;
   return {
-    inputOffsetMs: coerceNumber(obj['inputOffsetMs'], DEFAULT_CALIBRATION.inputOffsetMs),
-    videoOffsetMs: coerceNumber(obj['videoOffsetMs'], DEFAULT_CALIBRATION.videoOffsetMs),
+    inputOffsetMs: coerceNumber(obj["inputOffsetMs"], DEFAULT_CALIBRATION.inputOffsetMs),
+    videoOffsetMs: coerceNumber(obj["videoOffsetMs"], DEFAULT_CALIBRATION.videoOffsetMs),
   };
 }
 

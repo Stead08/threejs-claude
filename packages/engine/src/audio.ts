@@ -2,7 +2,7 @@
 
 // iOS サイレントスイッチ対策用の無音 wav（data URI）。
 const SILENT_WAV =
-  'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAAAA';
+  "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAAAA";
 
 /** visibilitychange 監視に必要な最小の document 抽象（注入式）。 */
 export interface VisibilityDocument {
@@ -39,7 +39,7 @@ export class AudioEngine {
    * iOS のオーディオアンロックとサイレントスイッチ対策を行う。
    */
   async unlock(): Promise<void> {
-    if (this.#ctx.state === 'suspended') {
+    if (this.#ctx.state === "suspended") {
       await this.#ctx.resume();
     }
     // 無音バッファを 1 発鳴らしてアンロックを確実にする。
@@ -92,7 +92,7 @@ export class AudioEngine {
 
   /** AudioContext を suspend する。 */
   async suspend(): Promise<void> {
-    if (this.#ctx.state === 'running') {
+    if (this.#ctx.state === "running") {
       await this.#ctx.suspend();
     }
   }
@@ -104,7 +104,7 @@ export class AudioEngine {
    */
   async resume(): Promise<void> {
     const state = this.#ctx.state as string;
-    if (state !== 'running' && state !== 'closed') {
+    if (state !== "running" && state !== "closed") {
       await this.#ctx.resume();
     }
   }
@@ -130,7 +130,7 @@ export class AudioEngine {
     // statechange で「可視なのに running でない」を検出して復帰を試みる。
     const stateHandler = (): void => {
       const state = this.#ctx.state as string;
-      if (!doc.hidden && state !== 'running' && state !== 'closed') {
+      if (!doc.hidden && state !== "running" && state !== "closed") {
         this.resume()
           .then(() => {
             onResume?.();
@@ -140,11 +140,11 @@ export class AudioEngine {
           });
       }
     };
-    doc.addEventListener('visibilitychange', handler);
-    this.#ctx.addEventListener('statechange', stateHandler);
+    doc.addEventListener("visibilitychange", handler);
+    this.#ctx.addEventListener("statechange", stateHandler);
     return (): void => {
-      doc.removeEventListener('visibilitychange', handler);
-      this.#ctx.removeEventListener('statechange', stateHandler);
+      doc.removeEventListener("visibilitychange", handler);
+      this.#ctx.removeEventListener("statechange", stateHandler);
     };
   }
 }

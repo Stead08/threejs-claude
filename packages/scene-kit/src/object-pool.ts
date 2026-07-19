@@ -26,7 +26,7 @@ export class ObjectPool<T> {
       return item;
     }
     if (this.#factory === null) {
-      throw new Error('ObjectPool: factory is not set. Call prealloc() first.');
+      throw new Error("ObjectPool: factory is not set. Call prealloc() first.");
     }
     return this.#factory();
   }

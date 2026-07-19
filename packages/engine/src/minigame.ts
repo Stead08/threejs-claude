@@ -1,8 +1,8 @@
 // Minigame 契約型（PLAN §5 概形を M0 向けに具体化）。engine が定義し games/* が実装する。
 
-import type { AudioEngine } from './audio';
-import type { AudioClock } from './clock';
-import type { EngineEvent } from './events';
+import type { AudioEngine } from "./audio";
+import type { AudioClock } from "./clock";
+import type { EngineEvent } from "./events";
 
 /** 入力動詞の定義（タップ / ホールド / フリック等）。M0 はタップのみ使用。 */
 export interface VerbSpec {

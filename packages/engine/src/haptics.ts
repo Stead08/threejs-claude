@@ -8,7 +8,7 @@
 //                 （オーバレイの描画は shell 側の HapticSwitch が担う）。
 // - 'none':       どちらも使えない環境（デスクトップ等）。
 
-export type HapticsMode = 'vibrate' | 'ios-switch' | 'none';
+export type HapticsMode = "vibrate" | "ios-switch" | "none";
 
 /** テストで差し替え可能にするための navigator の必要最小サブセット。 */
 export interface NavigatorLike {
@@ -21,11 +21,11 @@ export interface NavigatorLike {
 export const HAPTIC_TAP_MS = 15;
 
 function defaultNavigator(): NavigatorLike | undefined {
-  return typeof navigator === 'undefined' ? undefined : navigator;
+  return typeof navigator === "undefined" ? undefined : navigator;
 }
 
 function isAppleTouchDevice(nav: NavigatorLike): boolean {
-  const ua = nav.userAgent ?? '';
+  const ua = nav.userAgent ?? "";
   if (/iPhone|iPad|iPod/.test(ua)) {
     return true;
   }
@@ -38,17 +38,19 @@ function isAppleTouchDevice(nav: NavigatorLike): boolean {
  * vibrate の有無を先に見る（iOS には存在せず、Android には存在する）ため UA 判定は
  * Apple タッチ端末の識別にのみ使う。
  */
-export function detectHapticsMode(nav: NavigatorLike | undefined = defaultNavigator()): HapticsMode {
+export function detectHapticsMode(
+  nav: NavigatorLike | undefined = defaultNavigator(),
+): HapticsMode {
   if (nav === undefined) {
-    return 'none';
+    return "none";
   }
-  if (typeof nav.vibrate === 'function') {
-    return 'vibrate';
+  if (typeof nav.vibrate === "function") {
+    return "vibrate";
   }
   if (isAppleTouchDevice(nav)) {
-    return 'ios-switch';
+    return "ios-switch";
   }
-  return 'none';
+  return "none";
 }
 
 /**
@@ -56,7 +58,7 @@ export function detectHapticsMode(nav: NavigatorLike | undefined = defaultNaviga
  * iOS のハプティクスはここでは鳴らせない（shell 側のスイッチオーバレイが担う）。
  */
 export function hapticTap(nav: NavigatorLike | undefined = defaultNavigator()): void {
-  if (nav !== undefined && typeof nav.vibrate === 'function') {
+  if (nav !== undefined && typeof nav.vibrate === "function") {
     nav.vibrate(HAPTIC_TAP_MS);
   }
 }

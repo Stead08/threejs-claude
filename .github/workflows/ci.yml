@@ -47,6 +47,7 @@ jobs:
           gzip -9 -c packages/engine/wasm-pkg/rhythm_wasm_bg.wasm | wc -c \
             | xargs -I{} echo "wasm gz size: {} bytes (budget 400000)"
       - run: pnpm lint
+      - run: pnpm format:check
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm depcruise

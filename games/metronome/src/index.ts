@@ -12,15 +12,22 @@ import {
   initWasm,
   loadBinary,
   renderNoteBuffer,
-} from '@rhythm/engine';
-import type { EngineEvent, Minigame, MinigameContext, MinigameScene, SessionHandle, VerbSpec } from '@rhythm/engine';
+} from "@rhythm/engine";
+import type {
+  EngineEvent,
+  Minigame,
+  MinigameContext,
+  MinigameScene,
+  SessionHandle,
+  VerbSpec,
+} from "@rhythm/engine";
 
 // `?url` サフィックス付きアセット import は assets.d.ts のアンビエント宣言で型解決される。
-import midiUrl from '../../../charts/metronome.mid?url';
-import sf2Url from '../../../charts/dev.sf2?url';
-import overlay from '../../../charts/metronome.json';
+import midiUrl from "../../../charts/metronome.mid?url";
+import sf2Url from "../../../charts/dev.sf2?url";
+import overlay from "../../../charts/metronome.json";
 
-import { MetronomeScene } from './scene';
+import { MetronomeScene } from "./scene";
 
 /** 曲サンプルレートの既定値（AudioContext から取得できない場合のフォールバック）。 */
 const SAMPLE_RATE_FALLBACK = 48000;
@@ -39,7 +46,7 @@ interface Calibration {
 function readCalibration(): Calibration {
   // Cookie ブロック環境では localStorage へのアクセス自体が throw するため try で包む。
   try {
-    if (typeof localStorage !== 'undefined') {
+    if (typeof localStorage !== "undefined") {
       return new CalibrationStore(localStorage).get();
     }
   } catch {
@@ -50,8 +57,8 @@ function readCalibration(): Calibration {
 
 /** `Minigame` 契約の metronome 実装。 */
 class MetronomeGame implements Minigame {
-  readonly id = 'metronome';
-  readonly verbs: VerbSpec[] = [{ id: 0, name: 'tap' }];
+  readonly id = "metronome";
+  readonly verbs: VerbSpec[] = [{ id: 0, name: "tap" }];
 
   #ctx: MinigameContext | null = null;
   #session: SessionHandle | null = null;
@@ -127,7 +134,7 @@ class MetronomeGame implements Minigame {
     const tapBuffer = this.#tapBuffer;
     const canvas = this.#canvas;
     if (ctx === null || songBuffer === null || tapBuffer === null || canvas === null) {
-      throw new Error('metronomeGame.start(): load() と createScene() を先に呼ぶこと');
+      throw new Error("metronomeGame.start(): load() と createScene() を先に呼ぶこと");
     }
 
     const inputQueue = new InputQueue(ctx.clock, {
@@ -166,7 +173,13 @@ class MetronomeGame implements Minigame {
     const scene = this.#scene;
     const inputQueue = this.#inputQueue;
     const loop = this.#loop;
-    if (ctx === null || session === null || scene === null || inputQueue === null || loop === null) {
+    if (
+      ctx === null ||
+      session === null ||
+      scene === null ||
+      inputQueue === null ||
+      loop === null
+    ) {
       return;
     }
 

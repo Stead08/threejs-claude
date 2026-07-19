@@ -1,8 +1,8 @@
 // createToonMaterial: MeshToonMaterial + 共有 3 段グラデーションマップ。
 // M0-SPEC §6: 3 段 DataTexture グラデーションマップ（NearestFilter）を一度だけ生成して共有する。
 
-import { DataTexture, MeshToonMaterial, NearestFilter, RedFormat } from 'three';
-import type { ColorRepresentation } from 'three';
+import { DataTexture, MeshToonMaterial, NearestFilter, RedFormat } from "three";
+import type { ColorRepresentation } from "three";
 
 /** トゥーンシェーディングの段数（暗 / 中 / 明の 3 段）。 */
 const GRADIENT_STEPS = 3;

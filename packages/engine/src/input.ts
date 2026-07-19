@@ -1,7 +1,7 @@
 // InputQueue: pointerdown / keydown を audio 時刻へ変換して容量固定リングに積む。
 // drain は再利用ビューを返し、フレームループでの割り当てをゼロにする。
 
-import type { AudioClock } from './clock';
+import type { AudioClock } from "./clock";
 
 /** 入力動詞。M0 はタップ (0) のみ。 */
 const VERB_TAP = 0;
@@ -60,13 +60,13 @@ export class InputQueue {
     this.#keyHandler = (e: Event): void => {
       const ke = e as KeyboardEvent;
       // Space のみ受け付け、オートリピートは除外する（PC 開発用）。
-      if (ke.code === 'Space' && !ke.repeat) {
+      if (ke.code === "Space" && !ke.repeat) {
         this.#push(ke.timeStamp);
       }
     };
     // pointerdown は passive で購読（preventDefault しない）。
-    target.addEventListener('pointerdown', this.#pointerHandler, { passive: true });
-    keyboardTarget.addEventListener('keydown', this.#keyHandler);
+    target.addEventListener("pointerdown", this.#pointerHandler, { passive: true });
+    keyboardTarget.addEventListener("keydown", this.#keyHandler);
   }
 
   /** リスナを取り外す。 */
@@ -75,10 +75,10 @@ export class InputQueue {
       return;
     }
     if (this.#pointerHandler !== null) {
-      this.#target.removeEventListener('pointerdown', this.#pointerHandler);
+      this.#target.removeEventListener("pointerdown", this.#pointerHandler);
     }
     if (this.#keyHandler !== null && this.#keyboardTarget !== null) {
-      this.#keyboardTarget.removeEventListener('keydown', this.#keyHandler);
+      this.#keyboardTarget.removeEventListener("keydown", this.#keyHandler);
     }
     this.#target = null;
     this.#keyboardTarget = null;

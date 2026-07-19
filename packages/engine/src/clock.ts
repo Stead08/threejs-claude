@@ -89,7 +89,7 @@ export function fromAudioContext(ctx: AudioContext): AudioClock {
     perfNowMs: () => performance.now(),
     audioCurrentTimeSec: () => ctx.currentTime,
     outputTimestamp: () => {
-      if (typeof ctx.getOutputTimestamp !== 'function') {
+      if (typeof ctx.getOutputTimestamp !== "function") {
         return null;
       }
       const ts = ctx.getOutputTimestamp();

@@ -4,14 +4,14 @@
 // （静的な透明スイッチのみでゲームループから更新されない）。
 // 横向き警告のみ appState と無関係に常時マウントする。
 
-import type { ReactElement } from 'react';
-import { useShellStore } from './store';
-import { TitleScreen } from './screens/TitleScreen';
-import { LoadingScreen } from './screens/LoadingScreen';
-import { ResultScreen } from './screens/ResultScreen';
-import { SettingsScreen } from './screens/SettingsScreen';
-import { OrientationWarning } from './screens/OrientationWarning';
-import { PlayHapticLayer } from './PlayHapticLayer';
+import type { ReactElement } from "react";
+import { useShellStore } from "./store";
+import { TitleScreen } from "./screens/TitleScreen";
+import { LoadingScreen } from "./screens/LoadingScreen";
+import { ResultScreen } from "./screens/ResultScreen";
+import { SettingsScreen } from "./screens/SettingsScreen";
+import { OrientationWarning } from "./screens/OrientationWarning";
+import { PlayHapticLayer } from "./PlayHapticLayer";
 
 export interface AppShellProps {
   /** タイトルタップ時。呼び出し元（apps/web）が unlock → load → createScene → start を行う。 */
@@ -26,11 +26,11 @@ export function AppShell({ onStart, onRetry }: AppShellProps): ReactElement {
 
   return (
     <>
-      {appState === 'title' && <TitleScreen onStart={onStart} />}
-      {appState === 'loading' && <LoadingScreen />}
-      {appState === 'play' && <PlayHapticLayer />}
-      {appState === 'result' && <ResultScreen onRetry={onRetry} />}
-      {settingsOpen && appState !== 'play' && <SettingsScreen />}
+      {appState === "title" && <TitleScreen onStart={onStart} />}
+      {appState === "loading" && <LoadingScreen />}
+      {appState === "play" && <PlayHapticLayer />}
+      {appState === "result" && <ResultScreen onRetry={onRetry} />}
+      {settingsOpen && appState !== "play" && <SettingsScreen />}
       <OrientationWarning />
     </>
   );

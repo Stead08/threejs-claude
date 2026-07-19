@@ -6,9 +6,9 @@
 //   指がスイッチを直接トグルすることで WebKit ネイティブのハプティックが鳴り、
 //   トグルで発生する click はバブリングして div の onClick に届く（1 タップ = 1 click）。
 
-import type { CSSProperties, ReactElement, ReactNode } from 'react';
-import { detectHapticsMode, hapticTap } from '@rhythm/engine';
-import { HapticSwitch } from './HapticSwitch';
+import type { CSSProperties, ReactElement, ReactNode } from "react";
+import { detectHapticsMode, hapticTap } from "@rhythm/engine";
+import { HapticSwitch } from "./HapticSwitch";
 
 export interface HapticButtonProps {
   onClick: () => void;
@@ -29,7 +29,7 @@ export function HapticButton({
   style,
   children,
 }: HapticButtonProps): ReactElement {
-  if (mode !== 'ios-switch') {
+  if (mode !== "ios-switch") {
     return (
       <button
         type="button"
@@ -51,7 +51,7 @@ export function HapticButton({
       aria-disabled={disabled || undefined}
       onClick={disabled ? undefined : onClick}
       // textAlign は button の UA 既定（中央寄せ）を再現する。position はスイッチの重ね先。
-      style={{ position: 'relative', textAlign: 'center', ...style }}
+      style={{ position: "relative", textAlign: "center", ...style }}
     >
       {children}
       {disabled ? null : <HapticSwitch borderRadius={style?.borderRadius} />}

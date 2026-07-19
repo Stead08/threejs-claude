@@ -1,6 +1,6 @@
 // apps/web の Playwright 設定（M0-SPEC §9）。モバイルビューポート単一プロジェクトで smoke を通す。
 
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
 
 const PREVIEW_PORT = 4173;
 
@@ -13,18 +13,18 @@ function readEnv(name: string): string | undefined {
   return proc?.env?.[name];
 }
 
-const isCI = (readEnv('CI') ?? '') !== '';
+const isCI = (readEnv("CI") ?? "") !== "";
 
 /**
  * ローカル(サンドボックス)にはプリインストール Chromium がある(PLAYWRIGHT_BROWSERS_PATH 配下の
  * `chromium` シンボリックリンク)。Playwright が期待するビルド番号と一致しない場合でも動かせるよう、
  * CI 以外では executablePath で直接指定する。CI では playwright install した通常ブラウザを使う。
  */
-const browsersPath = readEnv('PLAYWRIGHT_BROWSERS_PATH');
+const browsersPath = readEnv("PLAYWRIGHT_BROWSERS_PATH");
 const localChromium = !isCI && browsersPath ? `${browsersPath}/chromium` : undefined;
 
 export default defineConfig({
-  testDir: 'e2e',
+  testDir: "e2e",
   // ロード（オフラインシンセレンダ）を含む起動フローのため長めに取る。
   timeout: 60_000,
   // 既定の expect timeout はテスト全体(60s)より短くし、長い待ちが必要な箇所
@@ -34,16 +34,16 @@ export default defineConfig({
   },
   fullyParallel: true,
   retries: isCI ? 1 : 0,
-  reporter: 'list',
+  reporter: "list",
   use: {
-    trace: 'retain-on-failure',
+    trace: "retain-on-failure",
   },
   projects: [
     {
-      name: 'mobile-chromium',
+      name: "mobile-chromium",
       use: {
-        ...devices['Pixel 7'],
-        browserName: 'chromium',
+        ...devices["Pixel 7"],
+        browserName: "chromium",
         viewport: { width: 390, height: 844 },
         hasTouch: true,
         isMobile: true,
@@ -52,7 +52,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm preview',
+    command: "pnpm preview",
     port: PREVIEW_PORT,
     reuseExistingServer: !isCI,
     timeout: 60_000,

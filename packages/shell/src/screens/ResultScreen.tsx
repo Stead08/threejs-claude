@@ -1,25 +1,33 @@
 // リザルト画面。resultJson（statsJson）を parse し、just/safe/miss・mean±σ・ランクを表示する。
 
-import type { ReactElement } from 'react';
-import { theme } from '../theme';
-import { useShellStore } from '../store';
-import { parseStats } from '../parse-stats';
-import { PERFECT_LABEL, RANK_LABELS, rank } from '../rank';
-import { HapticButton } from '../HapticButton';
+import type { ReactElement } from "react";
+import { theme } from "../theme";
+import { useShellStore } from "../store";
+import { parseStats } from "../parse-stats";
+import { PERFECT_LABEL, RANK_LABELS, rank } from "../rank";
+import { HapticButton } from "../HapticButton";
 
 export interface ResultScreenProps {
   onRetry: () => void;
 }
 
-function StatRow({ label, value, color }: { label: string; value: string; color: string }): ReactElement {
+function StatRow({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: string;
+  color: string;
+}): ReactElement {
   return (
     <div
       style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        width: '100%',
-        padding: '6px 0',
-        fontSize: '4.2vw',
+        display: "flex",
+        justifyContent: "space-between",
+        width: "100%",
+        padding: "6px 0",
+        fontSize: "4.2vw",
       }}
     >
       <span style={{ color: theme.fgDim }}>{label}</span>
@@ -34,25 +42,25 @@ export function ResultScreen({ onRetry }: ResultScreenProps): ReactElement {
   const stats = resultJson === null ? null : parseStats(resultJson);
 
   const containerStyle = {
-    position: 'fixed',
+    position: "fixed",
     inset: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '16px',
-    padding: '24px',
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "16px",
+    padding: "24px",
     background: theme.bg,
     color: theme.fg,
-    fontFamily: 'system-ui, sans-serif',
-    textAlign: 'center',
-    pointerEvents: 'auto',
+    fontFamily: "system-ui, sans-serif",
+    textAlign: "center",
+    pointerEvents: "auto",
   } as const;
 
   if (stats === null) {
     return (
       <div style={containerStyle}>
-        <span style={{ fontSize: '4.5vw', color: theme.fgDim }}>結果を取得できませんでした</span>
+        <span style={{ fontSize: "4.5vw", color: theme.fgDim }}>結果を取得できませんでした</span>
         <RetryButton onRetry={onRetry} />
       </div>
     );
@@ -62,32 +70,32 @@ export function ResultScreen({ onRetry }: ResultScreenProps): ReactElement {
 
   return (
     <div style={containerStyle}>
-      <span style={{ fontSize: '4vw', color: theme.fgDim, letterSpacing: '0.1em' }}>RESULT</span>
+      <span style={{ fontSize: "4vw", color: theme.fgDim, letterSpacing: "0.1em" }}>RESULT</span>
       {perfect ? (
         <span
           style={{
-            fontSize: '4.5vw',
+            fontSize: "4.5vw",
             fontWeight: 700,
             color: theme.accent,
-            padding: '4px 16px',
-            borderRadius: '999px',
+            padding: "4px 16px",
+            borderRadius: "999px",
             border: `1px solid ${theme.accent}`,
           }}
         >
           {PERFECT_LABEL}
         </span>
       ) : null}
-      <span style={{ fontSize: '11vw', fontWeight: 800, color: theme.accent }}>
+      <span style={{ fontSize: "11vw", fontWeight: 800, color: theme.accent }}>
         {RANK_LABELS[grade]}
       </span>
 
       <div
         style={{
-          width: '80vw',
-          maxWidth: '420px',
-          marginTop: '12px',
-          padding: '16px 20px',
-          borderRadius: '16px',
+          width: "80vw",
+          maxWidth: "420px",
+          marginTop: "12px",
+          padding: "16px 20px",
+          borderRadius: "16px",
           background: theme.bgPanel,
         }}
       >
@@ -101,17 +109,26 @@ export function ResultScreen({ onRetry }: ResultScreenProps): ReactElement {
         />
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px', width: '80vw', maxWidth: '420px' }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+          marginTop: "24px",
+          width: "80vw",
+          maxWidth: "420px",
+        }}
+      >
         <RetryButton onRetry={onRetry} />
         <HapticButton
           onClick={openSettings}
           style={{
-            padding: '10px',
-            borderRadius: '999px',
+            padding: "10px",
+            borderRadius: "999px",
             border: `1px solid ${theme.border}`,
-            background: 'transparent',
+            background: "transparent",
             color: theme.fgDim,
-            fontSize: '3.8vw',
+            fontSize: "3.8vw",
           }}
         >
           設定
@@ -126,12 +143,12 @@ function RetryButton({ onRetry }: { onRetry: () => void }): ReactElement {
     <HapticButton
       onClick={onRetry}
       style={{
-        padding: '14px',
-        borderRadius: '999px',
+        padding: "14px",
+        borderRadius: "999px",
         border: `2px solid ${theme.accent}`,
         background: theme.bgPanelAlt,
         color: theme.fg,
-        fontSize: '5vw',
+        fontSize: "5vw",
         fontWeight: 700,
       }}
     >

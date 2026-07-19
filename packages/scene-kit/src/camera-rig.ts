@@ -2,8 +2,8 @@
 // 垂直 FOV なので、横幅ベースの補正はせずそのまま使う）。shake() は減衰付きの手ぶれオフセット。
 // M0-SPEC §6。
 
-import { PerspectiveCamera, Vector3 } from 'three';
-import type { Vector3Tuple } from 'three';
+import { PerspectiveCamera, Vector3 } from "three";
+import type { Vector3Tuple } from "three";
 
 const DEFAULT_FOV = 55;
 const DEFAULT_NEAR = 0.1;
