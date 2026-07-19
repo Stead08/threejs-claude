@@ -85,7 +85,7 @@ describe("AudioEngine.unlock", () => {
     });
     const steps: string[] = [];
     await createEngine(ctx).unlock({ onStep: (s) => steps.push(s) });
-    expect(steps).toEqual(["resume:start", "resume:done:running", "silent-audio:play"]);
+    expect(steps).toEqual(["silent-audio:play", "resume:start", "resume:done:running"]);
   });
 
   it("resume() が解決せず statechange も来なければタイムアウトで先へ進む", async () => {
@@ -97,7 +97,7 @@ describe("AudioEngine.unlock", () => {
     const done = createEngine(ctx).unlock({ onStep: (s) => steps.push(s) });
     await vi.advanceTimersByTimeAsync(3_000);
     await done;
-    expect(steps).toEqual(["resume:start", "resume:done:suspended", "silent-audio:play"]);
+    expect(steps).toEqual(["silent-audio:play", "resume:start", "resume:done:suspended"]);
   });
 
   it("無音 <audio> の play() が解決しなくても unlock は完了する", async () => {
@@ -130,5 +130,69 @@ describe("AudioEngine.unlock", () => {
     const ctx = createFakeContext({ state: "running", resume });
     await createEngine(ctx).unlock();
     expect(resume).not.toHaveBeenCalled();
+  });
+
+  it("無音 <audio> の play() は resume 待ちより前（ジェスチャタスク内）に開始される", async () => {
+    const order: string[] = [];
+    const ctx = createFakeContext({
+      state: "suspended",
+      resume: (): Promise<void> => {
+        order.push("resume");
+        ctx.state = "running";
+        return Promise.resolve();
+      },
+    });
+    const audio = {
+      loop: false,
+      play: (): Promise<void> => {
+        order.push("silent-play");
+        return Promise.resolve();
+      },
+    } as HTMLAudioElement;
+    await createEngine(ctx, audio).unlock();
+    expect(order).toEqual(["silent-play", "resume"]);
+  });
+
+  it("play() 拒否時は rejected を通知し、次の pointerdown で 1 回だけ再試行する", async () => {
+    const listeners: Array<() => void> = [];
+    vi.stubGlobal("window", {
+      addEventListener: (_type: string, listener: () => void): void => {
+        listeners.push(listener);
+      },
+    });
+    try {
+      const ctx = createFakeContext({
+        state: "suspended",
+        resume: (): Promise<void> => {
+          ctx.state = "running";
+          return Promise.resolve();
+        },
+      });
+      let playCalls = 0;
+      const audio = {
+        loop: false,
+        play: (): Promise<void> => {
+          playCalls += 1;
+          // 1 回目はアクティベーション失効の拒否を模擬、2 回目は成功。
+          return playCalls === 1
+            ? Promise.reject(new DOMException("denied", "NotAllowedError"))
+            : Promise.resolve();
+        },
+      } as HTMLAudioElement;
+      const steps: string[] = [];
+      await createEngine(ctx, audio).unlock({ onStep: (s) => steps.push(s) });
+      // 拒否の通知はマイクロタスクで届く。
+      await Promise.resolve();
+      expect(steps).toContain("silent-audio:play:rejected:NotAllowedError");
+      expect(listeners).toHaveLength(1);
+
+      // 次のユーザ操作（pointerdown）で再試行され、成功が通知される。
+      listeners[0]?.();
+      await Promise.resolve();
+      expect(playCalls).toBe(2);
+      expect(steps).toContain("silent-audio:play:ok");
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

@@ -55,6 +55,11 @@ export class AudioEngine {
    */
   async unlock(options: UnlockOptions = {}): Promise<void> {
     const step = options.onStep ?? ((): void => {});
+    // 無音 <audio loop> の play() は「タップのジェスチャタスク内で同期的に」呼ぶ。
+    // await（resume 等）の後に呼ぶと user activation が失効して NotAllowedError で
+    // 拒否され、サイレントスイッチ ON の iOS 端末では Web Audio がミュートされた
+    // ままになる（メディア再生カテゴリへの切替が起きない）。
+    this.#playSilentAudio(step);
     const state = this.#ctx.state as string;
     if (state !== "running" && state !== "closed") {
       step("resume:start");
@@ -67,17 +72,37 @@ export class AudioEngine {
     source.buffer = buffer;
     source.connect(this.#ctx.destination);
     source.start(0);
-    // 無音 <audio loop> をメディア再生カテゴリへ切り替えるために再生開始する。
-    // iOS Safari では play() の Promise が解決しないことがあるため await しない
-    // （カテゴリ切替はベストエフォートで、ロード進行をこれに賭けない）。
+  }
+
+  /**
+   * 無音 <audio loop> を再生開始してメディア再生カテゴリへ切り替える
+   * （iOS サイレントスイッチ対策）。iOS Safari では play() の Promise が解決しない
+   * ことがあるため await せず、結果は onStep へ通知するだけにする。
+   * 拒否（activation 失効等）時は次のユーザ操作で 1 回だけ再試行する。
+   */
+  #playSilentAudio(step: (s: string) => void): void {
     if (this.#silentAudio === null) {
       this.#silentAudio = this.#createAudioElement();
       this.#silentAudio.loop = true;
     }
     step("silent-audio:play");
-    this.#silentAudio.play().catch(() => {
-      // 再生失敗（自動再生ブロック等）は致命ではないので無視する。
-    });
+    this.#silentAudio.play().then(
+      (): void => {
+        step("silent-audio:play:ok");
+      },
+      (err: unknown): void => {
+        step(`silent-audio:play:rejected:${err instanceof Error ? err.name : "unknown"}`);
+        if (typeof window !== "undefined") {
+          window.addEventListener(
+            "pointerdown",
+            (): void => {
+              this.#playSilentAudio(step);
+            },
+            { once: true },
+          );
+        }
+      },
+    );
   }
 
   /**
@@ -154,11 +179,14 @@ export class AudioEngine {
    * AudioContext を resume する。
    * iOS は電話着信・Siri 等で非標準の 'interrupted' 状態になるため、
    * 'suspended' 限定にせず「running/closed 以外」で試みる。
+   * WebKit の「resume() の Promise が解決しない」バグに備え、unlock と同じ
+   * 競争（解決 / statechange / タイムアウト）で待つ — 素朴に await すると
+   * attachVisibilityAutoSuspend の onResume（clock.reset() の配線）が永久に呼ばれない。
    */
   async resume(): Promise<void> {
     const state = this.#ctx.state as string;
     if (state !== "running" && state !== "closed") {
-      await this.#ctx.resume();
+      await this.#resumeWithRecovery();
     }
   }
 

@@ -142,7 +142,11 @@ async function startGame(): Promise<void> {
     shellStore.getState().setAppState("play");
     game.start();
     disarmLoadWatchdog();
-    report("load-ok", { elapsedMs: Math.round(performance.now() - startedAtMs) });
+    report("load-ok", {
+      elapsedMs: Math.round(performance.now() - startedAtMs),
+      // 音が出ない事象の切り分け用: running 以外なら resume 未完了のまま進んでいる。
+      audioState: audioEngine.context.state,
+    });
   } catch (err) {
     disarmLoadWatchdog();
     // ロード/開始に失敗したらタイトルへ戻す（次のタップでやり直せる）。
