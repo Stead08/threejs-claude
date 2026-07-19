@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview --host",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "deploy": "wrangler deploy"
   },
   "dependencies": {
     "@rhythm/engine": "workspace:*",
@@ -24,6 +25,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
     "typescript": "^7.0.2",
-    "vite": "^8.1.5"
+    "vite": "^8.1.5",
+    "wrangler": "^4.112.0"
   }
 }

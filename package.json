@@ -9,6 +9,7 @@
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
     "preview": "pnpm --filter web preview",
+    "deploy": "pnpm build && pnpm --filter web deploy",
     "build:wasm": "wasm-pack build crates/wasm --target web --release --out-dir ../../packages/engine/wasm-pkg --out-name rhythm_wasm",
     "typecheck": "pnpm -r run typecheck",
     "lint": "oxlint --deny-warnings",
@@ -27,7 +28,9 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "esbuild"
+      "esbuild",
+      "sharp",
+      "workerd"
     ]
   }
 }
