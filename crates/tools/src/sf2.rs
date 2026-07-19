@@ -7,7 +7,10 @@
 //!
 //! プリセット:
 //! - bank0 preset0 "Lead"     → SquareInst（単サイクル矩形波をループ再生）
-//! - bank128 preset0 "Percussion" → PercInst（key36=low / key37=click / key38=accent）
+//! - bank0 preset1 "Bass"     → BassInst（単サイクル三角波をループ再生）
+//! - bank0 preset2 "Harm"     → HarmInst（単サイクル正弦波をループ再生）
+//! - bank128 preset0 "Percussion" → PercInst
+//!   （key35=kick / key36=low / key37=click / key38=accent / key42=hat）
 
 use std::f32::consts::TAU;
 
@@ -50,10 +53,14 @@ pub fn build_dev_sf2() -> Vec<u8> {
     const CLICK: u16 = 0;
     const LOW: u16 = 1;
     const ACCENT: u16 = 2;
-    const SQUARE: u16 = 3;
+    const KICK: u16 = 3;
+    const HAT: u16 = 4;
+    const SQUARE: u16 = 5;
+    const TRIANGLE: u16 = 6;
+    const SINE: u16 = 7;
 
     // ---- インストゥルメント定義（keyRange 先頭、sampleModes/overridingRootKey 中間、sampleID 末尾）----
-    let instruments: [InstrumentDef; 2] = [
+    let instruments: [InstrumentDef; 4] = [
         (
             "SquareInst",
             vec![vec![
@@ -64,17 +71,38 @@ pub fn build_dev_sf2() -> Vec<u8> {
         ),
         (
             "PercInst",
+            // ゾーンは keyRange 昇順（35, 36, 37, 38, 42）。
             vec![
+                perc_zone(35, KICK),
                 perc_zone(36, LOW),
                 perc_zone(37, CLICK),
                 perc_zone(38, ACCENT),
+                perc_zone(42, HAT),
             ],
+        ),
+        (
+            "BassInst",
+            vec![vec![
+                (GEN_KEY_RANGE, key_range(0, 127)),
+                (GEN_SAMPLE_MODES, 1), // Continuous loop
+                (GEN_SAMPLE_ID, TRIANGLE),
+            ]],
+        ),
+        (
+            "HarmInst",
+            vec![vec![
+                (GEN_KEY_RANGE, key_range(0, 127)),
+                (GEN_SAMPLE_MODES, 1), // Continuous loop
+                (GEN_SAMPLE_ID, SINE),
+            ]],
         ),
     ];
 
     // ---- プリセット定義（zone の末尾は instrument ジェネレータ）----
-    let presets: [PresetDef; 2] = [
+    let presets: [PresetDef; 4] = [
         ("Lead", 0, 0, vec![vec![(GEN_INSTRUMENT, 0)]]),
+        ("Bass", 0, 1, vec![vec![(GEN_INSTRUMENT, 2)]]),
+        ("Harm", 0, 2, vec![vec![(GEN_INSTRUMENT, 3)]]),
         ("Percussion", 128, 0, vec![vec![(GEN_INSTRUMENT, 1)]]),
     ];
 
@@ -145,7 +173,8 @@ fn build_samples() -> (Vec<i16>, Vec<SampleSpec>) {
     let mut wave: Vec<i16> = Vec::new();
     let mut specs: Vec<SampleSpec> = Vec::new();
 
-    // 並び順は SampleSpec のインデックスと一致させる（click, low, accent, square）。
+    // 並び順は SampleSpec のインデックスと一致させる
+    // （click, low, accent, kick, hat, square, triangle, sine）。
     append_sample(
         &mut wave,
         &mut specs,
@@ -164,8 +193,19 @@ fn build_samples() -> (Vec<i16>, Vec<SampleSpec>) {
         "accent",
         &decaying_sine(2400.0, 0.09, 0.9, 50.0),
     );
-    // 単サイクル矩形波（ループ用）。square は最後に置き endloop < len を保証する。
+    // キック: 150Hz→50Hz の指数ピッチスイープ + 減衰エンベロープ。
+    append_sample(
+        &mut wave,
+        &mut specs,
+        "kick",
+        &kick_sweep(150.0, 50.0, 0.25, 0.9, 18.0),
+    );
+    // クローズドハイハット: 固定シード LCG ノイズ × 急減衰（決定的）。
+    append_sample(&mut wave, &mut specs, "hat", &hat_noise(0.06, 0.6, 80.0));
+    // 単サイクル波形（ループ用）は最後にまとめる（100 サンプル/サイクル、ROOT_KEY=60）。
     append_sample(&mut wave, &mut specs, "square", &square_cycle(100, 0.5));
+    append_sample(&mut wave, &mut specs, "triangle", &triangle_cycle(100, 0.8));
+    append_sample(&mut wave, &mut specs, "sine", &sine_cycle(100, 0.6));
 
     (wave, specs)
 }
@@ -208,12 +248,73 @@ fn decaying_sine(freq: f32, dur_sec: f32, amp: f32, decay: f32) -> Vec<i16> {
     out
 }
 
+/// キック: 位相積分でサイン周波数を `f0`→`f1` へ指数スイープさせた減衰バースト。
+fn kick_sweep(f0: f32, f1: f32, dur_sec: f32, amp: f32, decay: f32) -> Vec<i16> {
+    let n = (dur_sec * SAMPLE_RATE as f32) as usize;
+    let mut out = Vec::with_capacity(n);
+    let mut phase = 0.0_f32;
+    for i in 0..n {
+        let t = i as f32 / SAMPLE_RATE as f32;
+        // f(t) = f0 * (f1/f0)^(t/dur) を位相積分（サンプル単位の前進オイラー）。
+        let freq = f0 * (f1 / f0).powf(t / dur_sec);
+        phase += TAU * freq / SAMPLE_RATE as f32;
+        let env = (-t * decay).exp();
+        out.push(to_i16(amp * env * phase.sin()));
+    }
+    out
+}
+
+/// クローズドハイハット: 固定シード LCG ノイズを 1 次差分（簡易ハイパス）して急減衰。
+/// 乱数は決定的なので生成バイナリは毎回同一になる。
+fn hat_noise(dur_sec: f32, amp: f32, decay: f32) -> Vec<i16> {
+    let n = (dur_sec * SAMPLE_RATE as f32) as usize;
+    let mut out = Vec::with_capacity(n);
+    // Numerical Recipes 系の LCG（固定シード）。
+    let mut state: u32 = 0x1234_5678;
+    let mut prev = 0.0_f32;
+    for i in 0..n {
+        state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+        // 上位 24 ビットを [-1, 1) に正規化。
+        let r = (state >> 8) as f32 / (1u32 << 23) as f32 - 1.0;
+        let hp = (r - prev) * 0.5;
+        prev = r;
+        let t = i as f32 / SAMPLE_RATE as f32;
+        let env = (-t * decay).exp();
+        out.push(to_i16(amp * env * hp));
+    }
+    out
+}
+
 /// 単サイクル矩形波（前半 +amp / 後半 -amp）。
 fn square_cycle(len: usize, amp: f32) -> Vec<i16> {
     let half = len / 2;
     let hi = to_i16(amp);
     let lo = to_i16(-amp);
     (0..len).map(|i| if i < half { hi } else { lo }).collect()
+}
+
+/// 単サイクル三角波（0 → +amp → -amp → 0、ループ境界で連続）。
+fn triangle_cycle(len: usize, amp: f32) -> Vec<i16> {
+    (0..len)
+        .map(|i| {
+            let phase = i as f32 / len as f32;
+            let v = if phase < 0.25 {
+                phase * 4.0
+            } else if phase < 0.75 {
+                2.0 - phase * 4.0
+            } else {
+                phase * 4.0 - 4.0
+            };
+            to_i16(amp * v)
+        })
+        .collect()
+}
+
+/// 単サイクル正弦波（Harm 用のやわらかい音色）。
+fn sine_cycle(len: usize, amp: f32) -> Vec<i16> {
+    (0..len)
+        .map(|i| to_i16(amp * (TAU * i as f32 / len as f32).sin()))
+        .collect()
 }
 
 fn to_i16(v: f32) -> i16 {
@@ -390,13 +491,19 @@ mod tests {
     fn loads_with_rustysynth() {
         let sf2 = build_dev_sf2();
         let font = SoundFont::new(&mut Cursor::new(&sf2)).expect("SoundFont のロードに失敗");
-        assert_eq!(font.get_presets().len(), 2, "プリセット数が 2 でない");
+        assert_eq!(font.get_presets().len(), 4, "プリセット数が 4 でない");
         assert_eq!(
             font.get_instruments().len(),
-            2,
-            "インストゥルメント数が 2 でない"
+            4,
+            "インストゥルメント数が 4 でない"
         );
-        assert_eq!(font.get_sample_headers().len(), 4, "サンプル数が 4 でない");
+        assert_eq!(font.get_sample_headers().len(), 8, "サンプル数が 8 でない");
+    }
+
+    #[test]
+    fn build_is_deterministic() {
+        // ハイハットの乱数は固定シード LCG なので、2 回生成しても同一バイト列になる。
+        assert_eq!(build_dev_sf2(), build_dev_sf2(), "生成結果が決定的でない");
     }
 
     #[test]
@@ -412,7 +519,7 @@ mod tests {
     #[test]
     fn percussion_keys_are_non_silent() {
         let sf2 = build_dev_sf2();
-        for key in [36_i32, 37, 38] {
+        for key in [35_i32, 36, 37, 38, 42] {
             let p = render_peak(&sf2, key);
             assert!(p > 0.05, "パーカッション key {key} が無音: peak={p}");
         }
@@ -421,17 +528,22 @@ mod tests {
     #[test]
     fn lead_preset_is_non_silent() {
         // bank0 preset0（矩形波 Lead）を ch0 でならす。
-        let sf2 = build_dev_sf2();
-        let font = Arc::new(SoundFont::new(&mut Cursor::new(&sf2)).unwrap());
-        let settings = SynthesizerSettings::new(SAMPLE_RATE as i32);
-        let mut synth = Synthesizer::new(&font, &settings).unwrap();
-        synth.process_midi_message(0, 0xC0, 0, 0); // program change → preset 0
-        synth.note_on(0, 60, 120);
-        let mut left = vec![0.0_f32; (SAMPLE_RATE / 2) as usize];
-        let mut right = vec![0.0_f32; (SAMPLE_RATE / 2) as usize];
-        synth.render(&mut left, &mut right);
-        let p = peak(&left).max(peak(&right));
+        let p = render_melodic_peak(0, 0, 60);
         assert!(p > 0.05, "Lead が無音: peak={p}");
+    }
+
+    #[test]
+    fn bass_preset_is_non_silent() {
+        // bank0 preset1（三角波 Bass）を ch1 でならす。
+        let p = render_melodic_peak(1, 1, 48);
+        assert!(p > 0.05, "Bass が無音: peak={p}");
+    }
+
+    #[test]
+    fn harm_preset_is_non_silent() {
+        // bank0 preset2（正弦波 Harm）を ch2 でならす。
+        let p = render_melodic_peak(2, 2, 72);
+        assert!(p > 0.05, "Harm が無音: peak={p}");
     }
 
     /// パーカッションチャンネル（ch9）で `key` をならしたピーク。
@@ -440,6 +552,20 @@ mod tests {
         let settings = SynthesizerSettings::new(SAMPLE_RATE as i32);
         let mut synth = Synthesizer::new(&font, &settings).unwrap();
         synth.note_on(9, key, 120);
+        let mut left = vec![0.0_f32; (SAMPLE_RATE / 2) as usize];
+        let mut right = vec![0.0_f32; (SAMPLE_RATE / 2) as usize];
+        synth.render(&mut left, &mut right);
+        peak(&left).max(peak(&right))
+    }
+
+    /// メロディックチャンネルで ProgramChange 後に `key` をならしたピーク。
+    fn render_melodic_peak(channel: i32, program: i32, key: i32) -> f32 {
+        let sf2 = build_dev_sf2();
+        let font = Arc::new(SoundFont::new(&mut Cursor::new(&sf2)).unwrap());
+        let settings = SynthesizerSettings::new(SAMPLE_RATE as i32);
+        let mut synth = Synthesizer::new(&font, &settings).unwrap();
+        synth.process_midi_message(channel, 0xC0, program, 0);
+        synth.note_on(channel, key, 120);
         let mut left = vec![0.0_f32; (SAMPLE_RATE / 2) as usize];
         let mut right = vec![0.0_f32; (SAMPLE_RATE / 2) as usize];
         synth.render(&mut left, &mut right);
