@@ -1,0 +1,8 @@
+{
+  "meta": { "id": "uraomote", "midi": "uraomote.mid", "soundfont": "dev.sf2" },
+  "cueTrack": "CUES",
+  "cueMap": { "36": 0, "37": 1 },
+  "sfx": {
+    "tap": { "percussion": true, "preset": 0, "key": 39, "velocity": 110, "durationSec": 0.3 }
+  }
+}
