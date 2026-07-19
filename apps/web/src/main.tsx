@@ -10,6 +10,7 @@ import { createRoot } from "react-dom/client";
 import { AudioEngine, fromAudioContext } from "@rhythm/engine";
 import type { AudioClock, Minigame, MinigameContext, MinigameScene } from "@rhythm/engine";
 import { AppShell, shellStore } from "@rhythm/shell";
+import type { GameChoice } from "@rhythm/shell";
 import {
   armLoadWatchdog,
   disarmLoadWatchdog,
@@ -22,17 +23,38 @@ import {
 // 以降のモジュール評価時エラー（要素欠落等）も window error 経由で拾えるよう最初に設置する。
 initTelemetry();
 
-/** ゲームレジストリ。動的 import によりコード分割される。 */
+/** ゲームレジストリ。動的 import によりコード分割される（ゲーム別チャンク）。 */
 const games: Record<string, () => Promise<{ default: Minigame }>> = {
   metronome: () => import("@rhythm/game-metronome"),
   uraomote: () => import("@rhythm/game-uraomote"),
 };
 
-/** 起動ゲームの既定 ID。`?game=<id>` でレジストリ内のゲームへ切り替えられる。 */
+/** タイトルのゲーム選択に出すカタログ（表示順・表示名・説明・テーマ色）。
+ * id はレジストリ `games` のキーと一致させること。 */
+const gameCatalog: readonly GameChoice[] = [
+  {
+    id: "uraomote",
+    name: "ウラオモテ",
+    description: "表拍と裏拍が入れかわる",
+    accent: "#ffce3a",
+  },
+  {
+    id: "metronome",
+    name: "メトロノーム",
+    description: "拍にあわせてタップ",
+    accent: "#5ab0ff",
+  },
+];
+
+/** 起動ゲームの既定 ID。`?game=<id>` でレジストリ内のゲームを初期選択にできる。 */
 const DEFAULT_GAME_ID = "uraomote";
-const requestedGameId = new URLSearchParams(window.location.search).get("game");
-const ACTIVE_GAME_ID =
-  requestedGameId !== null && requestedGameId in games ? requestedGameId : DEFAULT_GAME_ID;
+
+/** URL の `?game=<id>` を初期選択に採用する（レジストリに存在する場合のみ）。 */
+function resolveInitialGameId(): string {
+  const requested = new URLSearchParams(window.location.search).get("game");
+  return requested !== null && requested in games ? requested : DEFAULT_GAME_ID;
+}
+
 const MAX_DEVICE_PIXEL_RATIO = 2;
 
 function requireCanvas(id: string): HTMLCanvasElement {
@@ -82,10 +104,14 @@ function handleFinished(statsJson: string): void {
   shellStore.getState().setResult(statsJson);
 }
 
-/** タイトルタップ時のメインフロー。失敗時はタイトルへ戻す。 */
-async function startGame(): Promise<void> {
+/** タイトルの「はじめる」時のメインフロー（引数は選択中のゲーム ID）。失敗時はタイトルへ戻す。 */
+async function startGame(gameId: string): Promise<void> {
   const startedAtMs = performance.now();
-  mark("start:tap", { audioState: audioEngine.context.state });
+  mark("start:tap", { audioState: audioEngine.context.state, gameId });
+  // リロードでの「もういちど」でも同じゲームに戻れるよう選択を URL に反映する。
+  const url = new URL(window.location.href);
+  url.searchParams.set("game", gameId);
+  window.history.replaceState(null, "", url);
   // 実機で「読み込み中のまま止まる」を検知する。到達段階はブレッドクラム、
   // 停止時点の進捗・音声状態はスナップショットとして Workers Logs に載る。
   armLoadWatchdog(() => ({
@@ -112,9 +138,9 @@ async function startGame(): Promise<void> {
     state.setLoadProgress(0);
     state.setAppState("loading");
 
-    const loadGame = games[ACTIVE_GAME_ID];
+    const loadGame = games[gameId];
     if (loadGame === undefined) {
-      throw new Error(`未登録のゲームです: ${ACTIVE_GAME_ID}`);
+      throw new Error(`未登録のゲームです: ${gameId}`);
     }
     const mod = await loadGame();
     mark("game:module-loaded");
@@ -169,9 +195,12 @@ function retryGame(): void {
   window.location.reload();
 }
 
+// タイトルの初期選択を URL（`?game=`）から決めてストアへ反映する。
+shellStore.getState().setSelectedGameId(resolveInitialGameId());
+
 const reactRoot = createRoot(rootEl);
 reactRoot.render(
   <StrictMode>
-    <AppShell onStart={startGame} onRetry={retryGame} />
+    <AppShell games={gameCatalog} onStart={startGame} onRetry={retryGame} />
   </StrictMode>,
 );
