@@ -8,16 +8,16 @@
 
 ## 0. 決定ログ
 
-| 日付 | 決定 |
-|---|---|
-| 2026-07-19 | **モバイル専用**。モバイルレイアウト前提（PC は開発用途のみ） |
-| 2026-07-19 | アートは**ローポリ・トゥーン** |
-| 2026-07-19 | 音源は **MIDI**。再生は自作シンセ or ライブラリ（調査結果 → §4、本命 rustysynth） |
-| 2026-07-19 | **v1 はミニゲーム 1 本**。オンライン要素なし |
-| 2026-07-19 | **モジュラモノリス**: ゲームごとに別モジュール、疎結合を構造で強制 |
-| 2026-07-19 | **縦持ち固定**で確定（横持ち対応はしない） |
-| 2026-07-19 | v1 ミニゲームは**「カラテや」**で確定（仕様概要 → §9） |
-| 2026-07-19 | 音は一任 → **路線 A（SF2 サブセット、GeneralUser GS 第一候補）で確定**。自作音色（路線 B）は v2 オプション |
+| 日付       | 決定                                                                                                                                   |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-07-19 | **モバイル専用**。モバイルレイアウト前提（PC は開発用途のみ）                                                                          |
+| 2026-07-19 | アートは**ローポリ・トゥーン**                                                                                                         |
+| 2026-07-19 | 音源は **MIDI**。再生は自作シンセ or ライブラリ（調査結果 → §4、本命 rustysynth）                                                      |
+| 2026-07-19 | **v1 はミニゲーム 1 本**。オンライン要素なし                                                                                           |
+| 2026-07-19 | **モジュラモノリス**: ゲームごとに別モジュール、疎結合を構造で強制                                                                     |
+| 2026-07-19 | **縦持ち固定**で確定（横持ち対応はしない）                                                                                             |
+| 2026-07-19 | v1 ミニゲームは**「カラテや」**で確定（仕様概要 → §9）                                                                                 |
+| 2026-07-19 | 音は一任 → **路線 A（SF2 サブセット、GeneralUser GS 第一候補）で確定**。自作音色（路線 B）は v2 オプション                             |
 | 2026-07-19 | Lint は **Biome → oxlint**（+ oxfmt）に変更。ライブラリは**可能な限り最新版**を採用（TS7 / Vite8 / Vitest4 / three r185 / React 19.2） |
 
 ---
@@ -26,12 +26,12 @@
 
 「リズム天国ライク」を要素分解すると、設計に効くのは次の 4 点:
 
-| 特徴 | 設計への含意 |
-|---|---|
-| 入力は 1〜2 個の単純な「動詞」 | モバイルと相性最良: 画面全体タップを主動詞に（+ホールド/フリック） |
-| 音のキュー（予告）→ レスポンス（入力）の文法 | 「キュー表＝譜面」を中心に据えたデータ駆動設計 |
-| 判定は音基準でシビア（見た目より耳） | **オーディオクロックを唯一の正とするタイミング設計が最重要** |
-| ミニゲームの集合体 | ミニゲーム = 独立モジュール（モジュラモノリス） |
+| 特徴                                         | 設計への含意                                                       |
+| -------------------------------------------- | ------------------------------------------------------------------ |
+| 入力は 1〜2 個の単純な「動詞」               | モバイルと相性最良: 画面全体タップを主動詞に（+ホールド/フリック） |
+| 音のキュー（予告）→ レスポンス（入力）の文法 | 「キュー表＝譜面」を中心に据えたデータ駆動設計                     |
+| 判定は音基準でシビア（見た目より耳）         | **オーディオクロックを唯一の正とするタイミング設計が最重要**       |
+| ミニゲームの集合体                           | ミニゲーム = 独立モジュール（モジュラモノリス）                    |
 
 - プレイ環境: **スマホ縦持ち（9:16〜9:19.5）固定**、片手親指プレイを基本形に据える
 - 3D の使い所: 奥行き方向から物が飛んでくる構図は縦画面と相性が良い。カメラワーク・ローポリトゥーンの「1 ボタンでも画面が豪華」を狙う
@@ -41,24 +41,24 @@
 
 ## 2. 技術選定サマリ
 
-| 領域 | 採用 | 主な対抗馬 | 一言理由 |
-|---|---|---|---|
-| 対象環境 | **iOS Safari / Android Chrome（モバイル専用・縦持ち）** | — | 決定事項 |
-| レンダリング | **Three.js (WebGL2)** | Babylon.js / Bevy(Wasm) | 指定。モバイル WebGL2 は成熟 |
-| 言語 | **TypeScript (strict)** | — | 譜面/判定まわりで型が効く |
-| ビルド | **Vite + pnpm workspace（モジュラモノリス）** | Turborepo | 単一デプロイ・内部パッケージ分割 |
-| ロジックコア | **Rust → Wasm (wasm-bindgen + wasm-pack)** | 全部 TS | 判定・譜面・**シンセ**を担当 |
-| 音源 | **MIDI + SoundFont、Rust シンセでレンダ（rustysynth + midly）** | SpessaSynth / 自作 DSP | §4 の調査結果。オーディオファイル同梱不要 |
-| オーディオ再生 | **Web Audio API 直**（レンダ済み AudioBuffer の先行予約再生） | Howler / Tone.js | クロック完全制御。ワークレット不要で開始 |
-| UI | **React 19（ゲーム外シェルのみ）** | Solid / 素 DOM | フレームループに React を入れない規律で十分 |
-| 状態橋渡し | **Zustand (vanilla store + React バインド)** | Jotai | ループ側から非 React で書き込める |
-| 入力 | **Pointer Events（タッチ）** | Touch Events | 統一 API・`event.timeStamp` で判定 |
-| 3D テキスト/HUD | **troika-three-text + 命令的 DOM 更新** | CSS2DRenderer | React 再レンダを踏まない |
-| ポストプロセス | **原則なし**（輪郭はインバーテッドハル等マテリアルで） | pmndrs/postprocessing | モバイル GPU・熱・電池優先 |
-| Lint/Format | **oxlint + oxfmt** | Biome / ESLint+Prettier | Rust 製で高速。当初 Biome だったが oxlint へ変更（決定ログ参照） |
-| モジュール境界検査 | **package.json 依存宣言 + dependency-cruiser (CI)** | eslint-plugin-boundaries | 物理強制 + 自動検査の二段構え |
-| テスト | **cargo test（コア）+ Vitest + Playwright（モバイルエミュレーション）** | — | 判定は Rust 側で決定論テスト |
-| 配布 | **GitHub Pages + PWA（manifest/SW, M3〜）** | Cloudflare Pages | 静的で足りる。SAB が要る日が来たら CF へ |
+| 領域               | 採用                                                                    | 主な対抗馬               | 一言理由                                                         |
+| ------------------ | ----------------------------------------------------------------------- | ------------------------ | ---------------------------------------------------------------- |
+| 対象環境           | **iOS Safari / Android Chrome（モバイル専用・縦持ち）**                 | —                        | 決定事項                                                         |
+| レンダリング       | **Three.js (WebGL2)**                                                   | Babylon.js / Bevy(Wasm)  | 指定。モバイル WebGL2 は成熟                                     |
+| 言語               | **TypeScript (strict)**                                                 | —                        | 譜面/判定まわりで型が効く                                        |
+| ビルド             | **Vite + pnpm workspace（モジュラモノリス）**                           | Turborepo                | 単一デプロイ・内部パッケージ分割                                 |
+| ロジックコア       | **Rust → Wasm (wasm-bindgen + wasm-pack)**                              | 全部 TS                  | 判定・譜面・**シンセ**を担当                                     |
+| 音源               | **MIDI + SoundFont、Rust シンセでレンダ（rustysynth + midly）**         | SpessaSynth / 自作 DSP   | §4 の調査結果。オーディオファイル同梱不要                        |
+| オーディオ再生     | **Web Audio API 直**（レンダ済み AudioBuffer の先行予約再生）           | Howler / Tone.js         | クロック完全制御。ワークレット不要で開始                         |
+| UI                 | **React 19（ゲーム外シェルのみ）**                                      | Solid / 素 DOM           | フレームループに React を入れない規律で十分                      |
+| 状態橋渡し         | **Zustand (vanilla store + React バインド)**                            | Jotai                    | ループ側から非 React で書き込める                                |
+| 入力               | **Pointer Events（タッチ）**                                            | Touch Events             | 統一 API・`event.timeStamp` で判定                               |
+| 3D テキスト/HUD    | **troika-three-text + 命令的 DOM 更新**                                 | CSS2DRenderer            | React 再レンダを踏まない                                         |
+| ポストプロセス     | **原則なし**（輪郭はインバーテッドハル等マテリアルで）                  | pmndrs/postprocessing    | モバイル GPU・熱・電池優先                                       |
+| Lint/Format        | **oxlint + oxfmt**                                                      | Biome / ESLint+Prettier  | Rust 製で高速。当初 Biome だったが oxlint へ変更（決定ログ参照） |
+| モジュール境界検査 | **package.json 依存宣言 + dependency-cruiser (CI)**                     | eslint-plugin-boundaries | 物理強制 + 自動検査の二段構え                                    |
+| テスト             | **cargo test（コア）+ Vitest + Playwright（モバイルエミュレーション）** | —                        | 判定は Rust 側で決定論テスト                                     |
+| 配布               | **GitHub Pages + PWA（manifest/SW, M3〜）**                             | Cloudflare Pages         | 静的で足りる。SAB が要る日が来たら CF へ                         |
 
 ### 2.1 レンダリング: Three.js を「素で」使う（react-three-fiber は不採用）
 
@@ -74,12 +74,14 @@
 ### 2.3 Rust/Wasm の担当範囲
 
 **Rust に置く（決定論・計算・データ）**
+
 - Conductor: テンポマップに基づく beat ⇄ 秒 変換（テンポマップは MIDI 由来 → §4.3）
 - MIDI パース（midly）と譜面コンパイル（キュートラック → 秒展開済みイベント列）
 - **シンセ（rustysynth）: MIDI + SoundFont → PCM オフラインレンダ**
 - 判定エンジン・コンボ・スコア・リザルト集計・リプレイ
 
 **TS/JS に置く（I/O・演出）**
+
 - Web Audio 再生・先行スケジューリング、入力収集、Three.js シーン、VFX、UI
 
 コアクレートは wasm 非依存の純 Rust にして `cargo test` で網羅テスト。wasm-bindgen バインディングは薄い別クレート。
@@ -137,6 +139,7 @@ flowchart LR
 - ポーズ: `ctx.suspend()/resume()` + `visibilitychange`
 
 **キャリブレーション（設定画面に常設）**
+
 - **入力オフセット**（判定用）と**映像オフセット**（表示用）を別々に測定・保存（localStorage）
 - 初期値は `baseLatency` / `outputLatency`（Android Chrome）から推定。iOS は実測校正に頼る
 - Bluetooth イヤホン（+150〜300ms）は音キュー自体が遅れるため補正しきれない → 検出して警告
@@ -154,15 +157,15 @@ flowchart LR
 
 ### 3.2 モバイル前提の実装項目
 
-| 項目 | 方針 |
-|---|---|
-| 画面 | 縦持ち固定デザイン。iOS はロック API 不可 → 横向き検出で「縦にしてね」オーバレイ。`dvh` / `safe-area-inset-*` 対応 |
-| タッチ | `touch-action: none`、ピンチ/ダブルタップズーム抑止。主動詞は「画面のどこでもタップ」 |
+| 項目           | 方針                                                                                                                                                                  |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 画面           | 縦持ち固定デザイン。iOS はロック API 不可 → 横向き検出で「縦にしてね」オーバレイ。`dvh` / `safe-area-inset-*` 対応                                                    |
+| タッチ         | `touch-action: none`、ピンチ/ダブルタップズーム抑止。主動詞は「画面のどこでもタップ」                                                                                 |
 | iOS オーディオ | タップでスタート（AudioContext unlock）、電話/バックグラウンド中断からの resume 監視、**サイレントスイッチ対策（無音 `<audio>` ループでメディア再生カテゴリへ切替）** |
-| 画面消灯 | Screen Wake Lock API でプレイ中の消灯防止 |
-| ハプティクス | Android のみ `navigator.vibrate` でヒット時フィードバック（iOS Safari 不可・諦める） |
-| デバッグ | `vite --host` + 実機、Safari Web Inspector / chrome://inspect、画面内デバッグ HUD（誤差分布・fps・tick 時間） |
-| PC | 開発用にキーボード入力も engine に残す（プロダクト対象外） |
+| 画面消灯       | Screen Wake Lock API でプレイ中の消灯防止                                                                                                                             |
+| ハプティクス   | Android のみ `navigator.vibrate` でヒット時フィードバック（iOS Safari 不可・諦める）                                                                                  |
+| デバッグ       | `vite --host` + 実機、Safari Web Inspector / chrome://inspect、画面内デバッグ HUD（誤差分布・fps・tick 時間）                                                         |
+| PC             | 開発用にキーボード入力も engine に残す（プロダクト対象外）                                                                                                            |
 
 ### 3.3 Wasm 境界設計（チャットせず、バッチする）
 
@@ -177,15 +180,15 @@ flowchart LR
 
 ### 4.1 ライブラリ調査（2026-07 時点）
 
-| 候補 | 種別 | ライセンス | 所感 |
-|---|---|---|---|
-| **[rustysynth](https://github.com/sinshu/rustysynth)** | Rust / SF2 シンセ（MeltySynth 移植） | MIT | **本命**。依存ゼロの純 Rust、リアルタイム/オフライン両対応、MIDI ファイル再生・テンポ変更対応。wasm32 にそのまま乗る |
-| [OxiSynth](https://github.com/PolyMeilex/OxiSynth) | Rust / SF2 シンセ（FluidSynth 系） | MIT | 代替。rustysynth の品質・機能が不足した場合の乗り換え先 |
-| [spessasynth_lib](https://github.com/spessasus/spessasynth_lib) | TS / AudioWorklet シンセ | Apache-2.0 | JS 側の最有力。SF2/SF3/DLS 対応・活発。**Rust 案の比較リファレンス兼フォールバック** |
-| [WebAudioFont](https://github.com/surikov/webaudiofont) | JS / プリレンダ済みサンプル集 | 独自配布 | 音色データの取り回しが独特・サイズ管理しづらく不採用 |
-| smplr / soundfont-player | JS / CDN サンプル | MIT | サンプルを CDN 取得する設計がオフライン/資産管理と合わず不採用 |
-| js-synthesizer (FluidSynth wasm) | Wasm ビルド | LGPL | ライセンスとバイナリサイズで見送り |
-| Tone.js | JS シンセフレームワーク | MIT | SF2/MIDI プレイヤではない。「自作」をやるなら Rust 側（下記・路線 B）でやる |
+| 候補                                                            | 種別                                 | ライセンス | 所感                                                                                                                 |
+| --------------------------------------------------------------- | ------------------------------------ | ---------- | -------------------------------------------------------------------------------------------------------------------- |
+| **[rustysynth](https://github.com/sinshu/rustysynth)**          | Rust / SF2 シンセ（MeltySynth 移植） | MIT        | **本命**。依存ゼロの純 Rust、リアルタイム/オフライン両対応、MIDI ファイル再生・テンポ変更対応。wasm32 にそのまま乗る |
+| [OxiSynth](https://github.com/PolyMeilex/OxiSynth)              | Rust / SF2 シンセ（FluidSynth 系）   | MIT        | 代替。rustysynth の品質・機能が不足した場合の乗り換え先                                                              |
+| [spessasynth_lib](https://github.com/spessasus/spessasynth_lib) | TS / AudioWorklet シンセ             | Apache-2.0 | JS 側の最有力。SF2/SF3/DLS 対応・活発。**Rust 案の比較リファレンス兼フォールバック**                                 |
+| [WebAudioFont](https://github.com/surikov/webaudiofont)         | JS / プリレンダ済みサンプル集        | 独自配布   | 音色データの取り回しが独特・サイズ管理しづらく不採用                                                                 |
+| smplr / soundfont-player                                        | JS / CDN サンプル                    | MIT        | サンプルを CDN 取得する設計がオフライン/資産管理と合わず不採用                                                       |
+| js-synthesizer (FluidSynth wasm)                                | Wasm ビルド                          | LGPL       | ライセンスとバイナリサイズで見送り                                                                                   |
+| Tone.js                                                         | JS シンセフレームワーク              | MIT        | SF2/MIDI プレイヤではない。「自作」をやるなら Rust 側（下記・路線 B）でやる                                          |
 
 **選定: rustysynth + midly（MIDI パーサ, Rust）を `crates/synth` に。** 理由: (1) Rust/Wasm 方針と完全整合、(2) オフラインレンダは wasm の得意分野でワークレット複雑性を回避できる、(3) MIT で依存ゼロ。
 SpessaSynth は M0 で品質比較のリファレンスとして鳴らしてみる（採用切替のコストは低い — §4.2 の構成ならシンセは「PCM を作る箱」で交換可能）。
@@ -222,8 +225,8 @@ SpessaSynth は M0 で品質比較のリファレンスとして鳴らしてみ�
 // charts/karate-01.json — MIDI に載らない演出パラメタだけを持つオーバレイ
 {
   "meta": { "id": "karate-01", "midi": "karate.mid", "soundfont": "karate.sf2" },
-  "cueMap": { "36": "cue:throw", "38": "hit" },      // MIDIノート番号 → キュー種別
-  "params": [ { "beat": 4.0, "obj": "pot" } ]        // 拍位置ごとの演出パラメタ
+  "cueMap": { "36": "cue:throw", "38": "hit" }, // MIDIノート番号 → キュー種別
+  "params": [{ "beat": 4.0, "obj": "pot" }], // 拍位置ごとの演出パラメタ
 }
 ```
 
@@ -269,9 +272,9 @@ engine, scene-kit → 相互依存なし・ゲームを知らない
 ```ts
 interface Minigame {
   id: string;
-  load(ctx: EngineContext): Promise<void>;          // 譜面・SF2・3Dアセット
-  createScene(kit: SceneKit): MinigameScene;        // 3D演出の構築
-  verbs: VerbSpec[];                                // タップ / ホールド / フリック
+  load(ctx: EngineContext): Promise<void>; // 譜面・SF2・3Dアセット
+  createScene(kit: SceneKit): MinigameScene; // 3D演出の構築
+  verbs: VerbSpec[]; // タップ / ホールド / フリック
   onCue(cue: CueEvent, scene: MinigameScene): void; // キュー発火 → 演出
   onJudge(res: JudgeResult, scene: MinigameScene): void; // 判定 → フィードバック
 }
@@ -287,56 +290,66 @@ interface Minigame {
 原則: **最大リスク（モバイル実機のタイミング精度 × シンセ品質）から潰す**。絵作りは後。
 
 ### M0 — 実機スパイク（最重要・最初の 1 本）
+
 「メトロノームの縦切り」を**スマホ実機**で。workspace scaffolding、Three.js 空シーン、`crates/synth` で クリック音+短い MIDI をレンダ、タップ判定パイプ貫通。SpessaSynth との品質比較、SF2 サブセット化の試行、iOS unlock / サイレントスイッチ / 中断復帰の対処確認。
+
 - **Done 条件**: iOS / Android 実機で、クリック音に合わせたタップの誤差分布が安定（目安 σ < 15ms）。レンダ時間・wasm サイズ・メモリが予算内。判定・描画・音のどれかが破綻する未知課題がない
 
 ### M1 — コアエンジン
+
 Rust: Conductor（MIDI テンポマップ）/ MIDI+オーバレイ→イベント列コンパイル / 判定 / スコア / リプレイ。TS: キャリブレーション画面、デバッグ HUD。
+
 - **Done 条件**: `cargo test` で判定・変換網羅。同一入力ログ → 同一リザルトの決定論成立
 
 ### M2 — ミニゲーム 1 本の縦切り（= v1 の本体）
+
 `games/karate` に「カラテや」（→ §9）を実装: キュー音・3D 演出・ヒット VFX/SFX・リザルト・ランクまで通し、**「気持ちよさ」を実機で徹底チューニング**。
+
 - **Done 条件**: 第三者がスマホで遊んで「音ゲーとして成立している」と言える。判定に理不尽がない
 
 ### M3 — シェルとモジュール境界の確立
+
 React シェル（タイトル/設定/リザルト）、練習モード、永続化（校正値・ハイスコア）、PWA 化（manifest/SW・ホーム画面追加）、dependency-cruiser を CI へ、dev 用メトロノームゲームで契約を実証。
+
 - **Done 条件**: 新規ミニゲーム追加が「games/ にパッケージを足して登録する」だけで済む状態
 
 ### M4 — リリース磨き
+
 演出強化（カメラワーク・トゥーン輪郭の質）、パフォーマンス最適化、実機マトリクス（安価 Android 含む）検証、GitHub Pages デプロイ。
+
 - **Done 条件**: 公開 URL で v1（1 ゲーム）が遊べる
 
 ---
 
 ## 7. パフォーマンス予算（ミドルレンジ Android で 60fps）
 
-| 項目 | 予算 |
-|---|---|
-| JS ロジック + Wasm tick / フレーム | < 4ms（うち tick < 0.5ms） |
-| 描画 | < 60 draw calls / < 15 万 tris |
-| ポストプロセス | なし（輪郭はインバーテッドハル、色はトゥーンランプ） |
-| 解像度 | `pixelRatio ≤ 2` + 動的解像度スケール（フレームタイム p99 連動） |
-| フレームループ内のヒープ割り当て | ゼロ（プール + TypedArray 再利用） |
-| wasm バイナリ（core + synth） | < 400KB (gz) |
-| 初期ロード（app shell） | < 1.5MB (gz)。ゲーム本体は動的 import |
-| アセット（SF2 + MIDI + 3D） | SF2 < 5MB、glTF は Draco/KTX2 圧縮 |
-| メモリ | レンダ済み曲バッファ ≈ 50MB 許容（v1 は 1 曲） |
+| 項目                               | 予算                                                             |
+| ---------------------------------- | ---------------------------------------------------------------- |
+| JS ロジック + Wasm tick / フレーム | < 4ms（うち tick < 0.5ms）                                       |
+| 描画                               | < 60 draw calls / < 15 万 tris                                   |
+| ポストプロセス                     | なし（輪郭はインバーテッドハル、色はトゥーンランプ）             |
+| 解像度                             | `pixelRatio ≤ 2` + 動的解像度スケール（フレームタイム p99 連動） |
+| フレームループ内のヒープ割り当て   | ゼロ（プール + TypedArray 再利用）                               |
+| wasm バイナリ（core + synth）      | < 400KB (gz)                                                     |
+| 初期ロード（app shell）            | < 1.5MB (gz)。ゲーム本体は動的 import                            |
+| アセット（SF2 + MIDI + 3D）        | SF2 < 5MB、glTF は Draco/KTX2 圧縮                               |
+| メモリ                             | レンダ済み曲バッファ ≈ 50MB 許容（v1 は 1 曲）                   |
 
 ---
 
 ## 8. リスクと対策
 
-| リスク | 影響 | 対策 |
-|---|---|---|
-| SF2 サブセットの音質が「安っぽい」 | ゲームの気持ちよさ直撃 | M0 で試聴比較（rustysynth vs SpessaSynth vs 音色差し替え）。最悪は路線 B（自作音色）へ |
-| オフラインレンダのロード時間・メモリ | 起動体験悪化 | Worker 化 + 進捗表示。実測して曲長・サンプルレートを調整。チャンクレンダ余地あり |
-| iOS Web Audio の制約（unlock・中断・サイレントスイッチ） | 無音・起動不能 | M0 で対処パターンを確立（タップゲート・resume 監視・無音 `<audio>` ループ） |
-| 出力遅延の個体差・BT イヤホン | 判定が理不尽 | キャリブレーション常設 + BT 検出警告。音キュー遅延は原理的に補正不能と明示 |
-| タッチサンプリングのジッタ（±4〜8ms） | 判定精度の下限 | ウィンドウ幅に織り込み。実機の誤差分布を M0 で計測して数値決定 |
-| 熱・電池によるスロットリング | 後半でカクつく | ポスト処理なし・動的解像度・割り当てゼロ規律。長時間プレイを想定しない構成 |
-| 裏タブ・着信による中断 | 曲と画面の乖離 | クロックはオーディオ基準なので判定は無事。`visibilitychange` で自動ポーズ |
-| モジュール境界の腐食 | 疎結合が絵に描いた餅に | 依存宣言 + dependency-cruiser CI + dev 用 2 本目ゲームで常時実証 |
-| スコープ肥大 | 完成しない | v1 = 1 ゲーム固定。エディタ・リアルタイムシンセ・リミックスはすべて v2 以降 |
+| リスク                                                   | 影響                   | 対策                                                                                   |
+| -------------------------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------- |
+| SF2 サブセットの音質が「安っぽい」                       | ゲームの気持ちよさ直撃 | M0 で試聴比較（rustysynth vs SpessaSynth vs 音色差し替え）。最悪は路線 B（自作音色）へ |
+| オフラインレンダのロード時間・メモリ                     | 起動体験悪化           | Worker 化 + 進捗表示。実測して曲長・サンプルレートを調整。チャンクレンダ余地あり       |
+| iOS Web Audio の制約（unlock・中断・サイレントスイッチ） | 無音・起動不能         | M0 で対処パターンを確立（タップゲート・resume 監視・無音 `<audio>` ループ）            |
+| 出力遅延の個体差・BT イヤホン                            | 判定が理不尽           | キャリブレーション常設 + BT 検出警告。音キュー遅延は原理的に補正不能と明示             |
+| タッチサンプリングのジッタ（±4〜8ms）                    | 判定精度の下限         | ウィンドウ幅に織り込み。実機の誤差分布を M0 で計測して数値決定                         |
+| 熱・電池によるスロットリング                             | 後半でカクつく         | ポスト処理なし・動的解像度・割り当てゼロ規律。長時間プレイを想定しない構成             |
+| 裏タブ・着信による中断                                   | 曲と画面の乖離         | クロックはオーディオ基準なので判定は無事。`visibilitychange` で自動ポーズ              |
+| モジュール境界の腐食                                     | 疎結合が絵に描いた餅に | 依存宣言 + dependency-cruiser CI + dev 用 2 本目ゲームで常時実証                       |
+| スコープ肥大                                             | 完成しない             | v1 = 1 ゲーム固定。エディタ・リアルタイムシンセ・リミックスはすべて v2 以降            |
 
 ---
 

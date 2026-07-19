@@ -1,12 +1,12 @@
 // デバッグ HUD: DOM オーバレイへ直接 textContent を書き込む（React 不使用）。
 // fps / tickMs / just:safe:miss / mean±σms / 誤差ヒストグラムを 250ms 間隔で更新する。
 
-import type { JudgeStatsAccumulator } from './judge-stats';
+import type { JudgeStatsAccumulator } from "./judge-stats";
 
 /** HUD の更新間隔（秒）。 */
 const UPDATE_INTERVAL_SEC = 0.25;
 /** ヒストグラムの棒文字（8 段階、低→高）。 */
-const BAR_CHARS = '▁▂▃▄▅▆▇█';
+const BAR_CHARS = "▁▂▃▄▅▆▇█";
 
 export class DebugHud {
   readonly #el: HTMLDivElement;
@@ -15,19 +15,19 @@ export class DebugHud {
   #tickMs = 0;
 
   constructor(parent: HTMLElement = document.body) {
-    const el = document.createElement('div');
-    el.style.position = 'fixed';
-    el.style.top = '0';
-    el.style.left = '0';
-    el.style.right = '0';
-    el.style.padding = '4px 8px';
-    el.style.font = '11px/1.4 monospace';
-    el.style.color = '#7CFC7C';
-    el.style.background = 'rgba(0,0,0,0.55)';
-    el.style.whiteSpace = 'pre';
-    el.style.pointerEvents = 'none';
-    el.style.zIndex = '1000';
-    el.style.textShadow = '0 1px 1px rgba(0,0,0,0.8)';
+    const el = document.createElement("div");
+    el.style.position = "fixed";
+    el.style.top = "0";
+    el.style.left = "0";
+    el.style.right = "0";
+    el.style.padding = "4px 8px";
+    el.style.font = "11px/1.4 monospace";
+    el.style.color = "#7CFC7C";
+    el.style.background = "rgba(0,0,0,0.55)";
+    el.style.whiteSpace = "pre";
+    el.style.pointerEvents = "none";
+    el.style.zIndex = "1000";
+    el.style.textShadow = "0 1px 1px rgba(0,0,0,0.8)";
     parent.appendChild(el);
     this.#el = el;
   }
@@ -65,7 +65,7 @@ function renderHistogram(counts: Uint32Array): string {
       max = v;
     }
   }
-  let out = '';
+  let out = "";
   for (let i = 0; i < counts.length; i++) {
     const v = counts[i] ?? 0;
     const level = Math.min(BAR_CHARS.length - 1, Math.floor((v / max) * (BAR_CHARS.length - 1)));

@@ -60,7 +60,9 @@ apps/web → 全部可（合成の唯一の場所）
   "meta": { "id": "metronome", "midi": "metronome.mid", "soundfont": "dev.sf2" },
   "cueTrack": "CUES",
   "cueMap": { "36": 0, "38": 1 },
-  "sfx": { "tap": { "percussion": true, "preset": 0, "key": 37, "velocity": 100, "durationSec": 0.3 } }
+  "sfx": {
+    "tap": { "percussion": true, "preset": 0, "key": 37, "velocity": 100, "durationSec": 0.3 },
+  },
 }
 ```
 
@@ -121,6 +123,7 @@ impl Engine {
 ```
 
 判定アルゴリズム（確定）:
+
 1. `CueApproach`: `now >= target - approach_sec` になったキューを（時刻順に一度だけ）発火。
 2. 入力マッチング: 各入力について、未判定かつ `|input - target| <= safe_ms` のキューのうち **|error| 最小**のものへ割り当て。範囲内になければ入力は無視（空振りはイベントなし）。`|error| <= just_ms` → Just、それ以外 → Safe。
 3. `AutoMiss`: `now > target + safe_ms` の未判定キュー。Miss は統計の miss にカウント、誤差統計には含めない。
@@ -183,11 +186,11 @@ pub struct Session; // コンストラクタ(midi: &[u8], overlay_json: &str, co
 
 `tick` の戻り値（イベントレコード、4 × f64 / 件。**内部バッファ再利用**で毎フレーム割り当てしない — 戻りは `js_sys::Float64Array::view` ではなく都度 copy でよいが、Rust 側 Vec は再利用）:
 
-| type | [0] | [1] | [2] | [3] |
-|---|---|---|---|---|
-| CueApproach | 1 | cueIndex | kind | targetSec |
-| Judged | 2 | cueIndex | judgment (0/1/2) | errorMs（符号付き、正=遅い） |
-| AutoMiss | 3 | cueIndex | 2 | 0 |
+| type        | [0] | [1]      | [2]              | [3]                          |
+| ----------- | --- | -------- | ---------------- | ---------------------------- |
+| CueApproach | 1   | cueIndex | kind             | targetSec                    |
+| Judged      | 2   | cueIndex | judgment (0/1/2) | errorMs（符号付き、正=遅い） |
+| AutoMiss    | 3   | cueIndex | 2                | 0                            |
 
 `statsJson()`: `{"totalCues":n,"judged":n,"just":n,"safe":n,"miss":n,"meanMs":x,"stdMs":y,"histogram":{"fromMs":-100,"binMs":10,"counts":[20個]}}`
 
@@ -204,15 +207,19 @@ pub struct Session; // コンストラクタ(midi: &[u8], overlay_json: &str, co
 - **Minigame 契約**（PLAN §5 概形を M0 向けに具体化。型定義のみ）:
 
 ```ts
-export interface VerbSpec { id: number; name: string }
+export interface VerbSpec {
+  id: number;
+  name: string;
+}
 export interface MinigameContext {
-  audio: AudioEngine; clock: AudioClock;
-  assetBase: string;                       // チャートアセットの URL ベース
-  onFinished(statsJson: string): void;     // ゲーム→シェルへの結果通知
+  audio: AudioEngine;
+  clock: AudioClock;
+  assetBase: string; // チャートアセットの URL ベース
+  onFinished(statsJson: string): void; // ゲーム→シェルへの結果通知
 }
 export interface MinigameScene {
-  update(nowSec: number, songPosSec: number): void;  // 毎フレーム
-  handleEvent(ev: EngineEvent): void;                 // tick イベント→演出
+  update(nowSec: number, songPosSec: number): void; // 毎フレーム
+  handleEvent(ev: EngineEvent): void; // tick イベント→演出
   resize(w: number, h: number, dpr: number): void;
   dispose(): void;
 }
@@ -221,7 +228,7 @@ export interface Minigame {
   verbs: VerbSpec[];
   load(ctx: MinigameContext, onProgress: (r: number) => void): Promise<void>;
   createScene(canvas: HTMLCanvasElement): MinigameScene;
-  start(): void;   // 曲再生開始 + ループ開始
+  start(): void; // 曲再生開始 + ループ開始
   stop(): void;
 }
 ```

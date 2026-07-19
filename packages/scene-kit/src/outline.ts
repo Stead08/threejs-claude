@@ -1,8 +1,8 @@
 // addOutline: インバーテッドハル方式の輪郭線。ポストプロセスなしで輪郭を出す（PLAN §2 方針）。
 // M0-SPEC §6: 同ジオメトリ再利用の BackSide メッシュを子として追加して返す。
 
-import { BackSide, Mesh, MeshBasicMaterial } from 'three';
-import type { ColorRepresentation } from 'three';
+import { BackSide, Mesh, MeshBasicMaterial } from "three";
+import type { ColorRepresentation } from "three";
 
 const DEFAULT_SCALE = 1.03;
 const DEFAULT_COLOR: ColorRepresentation = 0x000000;

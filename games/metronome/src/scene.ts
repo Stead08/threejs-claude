@@ -15,21 +15,21 @@ import {
   MeshToonMaterial,
   Scene,
   TorusGeometry,
-} from 'three';
+} from "three";
 import {
   ObjectPool,
   PortraitCameraRig,
   addOutline,
   createGameRenderer,
   createToonMaterial,
-} from '@rhythm/scene-kit';
-import type { GameRenderer } from '@rhythm/scene-kit';
-import type { EngineEvent, MinigameScene } from '@rhythm/engine';
+} from "@rhythm/scene-kit";
+import type { GameRenderer } from "@rhythm/scene-kit";
+import type { EngineEvent, MinigameScene } from "@rhythm/engine";
 
-import { DebugHud } from './hud';
-import { JudgeStatsAccumulator } from './judge-stats';
-import { clamp, easeOutQuad, lerp } from './math-utils';
-import { createStarGeometry } from './star-geometry';
+import { DebugHud } from "./hud";
+import { JudgeStatsAccumulator } from "./judge-stats";
+import { clamp, easeOutQuad, lerp } from "./math-utils";
+import { createStarGeometry } from "./star-geometry";
 
 /** createSession() の approachSec と一致させること（M0-SPEC §7: 1.0 秒 = 2 拍 @120BPM）。 */
 const APPROACH_SEC = 1.0;
@@ -65,7 +65,7 @@ const COLOR_OUTLINE = 0x101014;
 const DEFAULT_WIDTH = 390;
 const DEFAULT_HEIGHT = 844;
 
-type CuePhase = 'approach' | 'just' | 'safe' | 'miss';
+type CuePhase = "approach" | "just" | "safe" | "miss";
 
 interface CueEntry {
   readonly mesh: Mesh;
@@ -108,7 +108,7 @@ function createCueEntry(threeScene: Scene, disposables: Disposable[]): CueEntry 
     cueIndex: -1,
     kind: 0,
     targetSec: 0,
-    phase: 'approach',
+    phase: "approach",
     phaseTimeSec: 0,
     baseScale: 1,
   };
@@ -177,7 +177,7 @@ export class MetronomeScene implements MinigameScene {
       position: CAMERA_POSITION,
       lookAt: CAMERA_LOOK_AT,
     });
-    const dpr = typeof globalThis.devicePixelRatio === 'number' ? globalThis.devicePixelRatio : 1;
+    const dpr = typeof globalThis.devicePixelRatio === "number" ? globalThis.devicePixelRatio : 1;
     this.#gameRenderer.resize(width, height, dpr);
 
     this.#threeScene.add(new HemisphereLight(0xddeeff, 0x223322, 0.95));
@@ -267,7 +267,7 @@ export class MetronomeScene implements MinigameScene {
     entry.cueIndex = cueIndex;
     entry.kind = kind;
     entry.targetSec = targetSec;
-    entry.phase = 'approach';
+    entry.phase = "approach";
     entry.phaseTimeSec = 0;
     entry.baseScale = kind === 1 ? BAR_HEAD_SCALE : 1;
     entry.material.color.setHex(COLOR_CUE_NEUTRAL);
@@ -300,13 +300,13 @@ export class MetronomeScene implements MinigameScene {
     // 場合、まだ補間前でスポーン地点(上空)にいるため、ここでスナップしておく。
     entry.mesh.position.set(RING_POS.x, RING_POS.y, RING_POS.z);
     if (judgment === 0) {
-      entry.phase = 'just';
+      entry.phase = "just";
       entry.phaseTimeSec = 0;
       entry.material.color.setHex(COLOR_CUE_JUST);
       this.#cameraRig.shake(SHAKE_JUST_STRENGTH);
       this.#spawnStar(RING_POS.x, RING_POS.y, RING_POS.z);
     } else {
-      entry.phase = 'safe';
+      entry.phase = "safe";
       entry.phaseTimeSec = 0;
       entry.material.color.setHex(COLOR_CUE_SAFE);
     }
@@ -324,7 +324,7 @@ export class MetronomeScene implements MinigameScene {
     if (entry === null || entry === undefined) {
       return;
     }
-    entry.phase = 'miss';
+    entry.phase = "miss";
     entry.phaseTimeSec = 0;
     entry.material.color.setHex(COLOR_CUE_MISS);
   }
@@ -351,16 +351,16 @@ export class MetronomeScene implements MinigameScene {
         continue;
       }
       switch (entry.phase) {
-        case 'approach':
+        case "approach":
           this.#advanceApproach(entry, songPosSec);
           break;
-        case 'just':
+        case "just":
           this.#advanceJust(entry, i, dt);
           break;
-        case 'safe':
+        case "safe":
           this.#advanceSafe(entry, i, dt);
           break;
-        case 'miss':
+        case "miss":
           this.#advanceMiss(entry, i, dt);
           break;
       }

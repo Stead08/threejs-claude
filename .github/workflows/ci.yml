@@ -38,18 +38,38 @@ jobs:
       - run: pnpm build:wasm
       # crates/wasm は wasm-pack の wasm-opt 自動実行を無効化している
       # (開発サンドボックスで binaryen の DL が egress 遮断されるため)。
-      # CI では apt の binaryen で明示的にサイズ最適化し、gz サイズを記録する。
-      - run: sudo apt-get update && sudo apt-get install -y binaryen
+      # サイズ最適化は devDependencies にバージョン固定した binaryen の wasm-opt で行う
+      # （deploy 用 scripts/workers-build.sh と同一手順）。apt の binaryen は古く
+      # （noble で 108）、wasm-bindgen 0.2.126 の出力を -all で処理すると実行時に
+      # WebAssembly.Table.grow が失敗する壊れたバイナリを生成するため使わない。
       - run: |
-          wasm-opt -Os -all \
+          pnpm exec wasm-opt -Os -all \
             -o packages/engine/wasm-pkg/rhythm_wasm_bg.wasm \
             packages/engine/wasm-pkg/rhythm_wasm_bg.wasm
           gzip -9 -c packages/engine/wasm-pkg/rhythm_wasm_bg.wasm | wc -c \
             | xargs -I{} echo "wasm gz size: {} bytes (budget 400000)"
       - run: pnpm lint
+      - run: pnpm format:check
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm depcruise
       - run: pnpm build
       - run: pnpm --filter web exec playwright install --with-deps chromium
       - run: pnpm test:e2e
+      # 失敗時は error-context（ARIA スナップショット）をログへ直接出す。
+      # アーティファクト取得が難しい環境からでもログだけで画面状態を判別できる。
+      - name: Dump e2e failure context
+        if: failure()
+        run: |
+          find apps/web/test-results -name 'error-context.md' -print -exec cat {} \; || true
+      # 失敗時はトレース（スクリーンショット・コンソール・ネットワーク込み）を回収して
+      # CI 環境でしか再現しない問題を手元で解析できるようにする。
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: |
+            apps/web/test-results/
+            apps/web/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7

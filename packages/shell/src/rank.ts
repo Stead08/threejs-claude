@@ -20,7 +20,7 @@ export interface Stats {
   histogram: RankHistogram;
 }
 
-export type RankGrade = 'retry' | 'ok' | 'high';
+export type RankGrade = "retry" | "ok" | "high";
 
 export interface RankResult {
   rank: RankGrade;
@@ -29,13 +29,13 @@ export interface RankResult {
 
 /** ランク表示名（日本語）。 */
 export const RANK_LABELS: Record<RankGrade, string> = {
-  retry: 'やりなおし',
-  ok: '平凡',
-  high: 'ハイレベル',
+  retry: "やりなおし",
+  ok: "平凡",
+  high: "ハイレベル",
 };
 
 /** ノーミス時の勲章表示名。 */
-export const PERFECT_LABEL = 'パーフェクト';
+export const PERFECT_LABEL = "パーフェクト";
 
 const RETRY_MISS_RATE = 0.2;
 const HIGH_MISS_RATE = 0.05;
@@ -56,14 +56,14 @@ export function rank(stats: Stats): RankResult {
   const perfect = stats.miss === 0;
 
   if (missRate > RETRY_MISS_RATE) {
-    return { rank: 'retry', perfect };
+    return { rank: "retry", perfect };
   }
   if (
     missRate <= HIGH_MISS_RATE &&
     Math.abs(stats.meanMs) <= HIGH_MEAN_ABS_MS &&
     stats.stdMs <= HIGH_STD_MS
   ) {
-    return { rank: 'high', perfect };
+    return { rank: "high", perfect };
   }
-  return { rank: 'ok', perfect };
+  return { rank: "ok", perfect };
 }

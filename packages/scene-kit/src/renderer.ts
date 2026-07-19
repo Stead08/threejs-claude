@@ -1,7 +1,7 @@
 // createGameRenderer: WebGLRenderer の生成とライフサイクル管理（resize/dispose）。
 // M0-SPEC §6: antialias, alpha:false / pixelRatio <= 2 / sRGB 出力。
 
-import { SRGBColorSpace, WebGLRenderer } from 'three';
+import { SRGBColorSpace, WebGLRenderer } from "three";
 
 /** ピクセル比の上限（モバイル GPU 予算対策）。 */
 const MAX_PIXEL_RATIO = 2;
@@ -28,7 +28,7 @@ export function createGameRenderer(canvas: HTMLCanvasElement): GameRenderer {
   renderer.outputColorSpace = SRGBColorSpace;
 
   const initialDpr =
-    typeof globalThis.devicePixelRatio === 'number' ? globalThis.devicePixelRatio : 1;
+    typeof globalThis.devicePixelRatio === "number" ? globalThis.devicePixelRatio : 1;
   renderer.setPixelRatio(clampPixelRatio(initialDpr));
 
   return {

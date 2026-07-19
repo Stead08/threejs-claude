@@ -1,9 +1,9 @@
 // wasm Session.statsJson() の文字列出力を Stats へ安全に変換する（any 不使用・unknown で絞り込み）。
 
-import type { RankHistogram, Stats } from './rank';
+import type { RankHistogram, Stats } from "./rank";
 
 function isFiniteNumber(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value);
+  return typeof value === "number" && Number.isFinite(value);
 }
 
 function isFiniteNumberArray(value: unknown): value is number[] {
@@ -11,13 +11,13 @@ function isFiniteNumberArray(value: unknown): value is number[] {
 }
 
 function parseHistogram(value: unknown): RankHistogram {
-  if (typeof value !== 'object' || value === null) {
+  if (typeof value !== "object" || value === null) {
     return { fromMs: -100, binMs: 10, counts: [] };
   }
   const obj = value as Record<string, unknown>;
-  const fromMs = obj['fromMs'];
-  const binMs = obj['binMs'];
-  const counts = obj['counts'];
+  const fromMs = obj["fromMs"];
+  const binMs = obj["binMs"];
+  const counts = obj["counts"];
   return {
     fromMs: isFiniteNumber(fromMs) ? fromMs : -100,
     binMs: isFiniteNumber(binMs) ? binMs : 10,
@@ -36,17 +36,17 @@ export function parseStats(json: string): Stats | null {
   } catch {
     return null;
   }
-  if (typeof parsed !== 'object' || parsed === null) {
+  if (typeof parsed !== "object" || parsed === null) {
     return null;
   }
   const obj = parsed as Record<string, unknown>;
-  const totalCues = obj['totalCues'];
-  const judged = obj['judged'];
-  const just = obj['just'];
-  const safe = obj['safe'];
-  const miss = obj['miss'];
-  const meanMs = obj['meanMs'];
-  const stdMs = obj['stdMs'];
+  const totalCues = obj["totalCues"];
+  const judged = obj["judged"];
+  const just = obj["just"];
+  const safe = obj["safe"];
+  const miss = obj["miss"];
+  const meanMs = obj["meanMs"];
+  const stdMs = obj["stdMs"];
   if (
     !isFiniteNumber(totalCues) ||
     !isFiniteNumber(judged) ||
@@ -66,6 +66,6 @@ export function parseStats(json: string): Stats | null {
     miss,
     meanMs,
     stdMs,
-    histogram: parseHistogram(obj['histogram']),
+    histogram: parseHistogram(obj["histogram"]),
   };
 }

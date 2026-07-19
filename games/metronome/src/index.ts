@@ -8,18 +8,26 @@ import {
   RenderClient,
   createSession,
   decodeEvents,
+  hapticTap,
   initWasm,
   loadBinary,
   renderNoteBuffer,
-} from '@rhythm/engine';
-import type { EngineEvent, Minigame, MinigameContext, MinigameScene, SessionHandle, VerbSpec } from '@rhythm/engine';
+} from "@rhythm/engine";
+import type {
+  EngineEvent,
+  Minigame,
+  MinigameContext,
+  MinigameScene,
+  SessionHandle,
+  VerbSpec,
+} from "@rhythm/engine";
 
 // `?url` サフィックス付きアセット import は assets.d.ts のアンビエント宣言で型解決される。
-import midiUrl from '../../../charts/metronome.mid?url';
-import sf2Url from '../../../charts/dev.sf2?url';
-import overlay from '../../../charts/metronome.json';
+import midiUrl from "../../../charts/metronome.mid?url";
+import sf2Url from "../../../charts/dev.sf2?url";
+import overlay from "../../../charts/metronome.json";
 
-import { MetronomeScene } from './scene';
+import { MetronomeScene } from "./scene";
 
 /** 曲サンプルレートの既定値（AudioContext から取得できない場合のフォールバック）。 */
 const SAMPLE_RATE_FALLBACK = 48000;
@@ -38,7 +46,7 @@ interface Calibration {
 function readCalibration(): Calibration {
   // Cookie ブロック環境では localStorage へのアクセス自体が throw するため try で包む。
   try {
-    if (typeof localStorage !== 'undefined') {
+    if (typeof localStorage !== "undefined") {
       return new CalibrationStore(localStorage).get();
     }
   } catch {
@@ -49,8 +57,8 @@ function readCalibration(): Calibration {
 
 /** `Minigame` 契約の metronome 実装。 */
 class MetronomeGame implements Minigame {
-  readonly id = 'metronome';
-  readonly verbs: VerbSpec[] = [{ id: 0, name: 'tap' }];
+  readonly id = "metronome";
+  readonly verbs: VerbSpec[] = [{ id: 0, name: "tap" }];
 
   #ctx: MinigameContext | null = null;
   #session: SessionHandle | null = null;
@@ -126,17 +134,22 @@ class MetronomeGame implements Minigame {
     const tapBuffer = this.#tapBuffer;
     const canvas = this.#canvas;
     if (ctx === null || songBuffer === null || tapBuffer === null || canvas === null) {
-      throw new Error('metronomeGame.start(): load() と createScene() を先に呼ぶこと');
+      throw new Error("metronomeGame.start(): load() と createScene() を先に呼ぶこと");
     }
 
     const inputQueue = new InputQueue(ctx.clock, {
       inputOffsetMs: readCalibration().inputOffsetMs,
       onTap: () => {
         ctx.audio.playSfx(tapBuffer);
+        // Android 等 Vibration API 対応環境の触覚。iOS はシェル側の透明スイッチ
+        // （PlayHapticLayer）がタップ時にネイティブハプティックを鳴らす。
+        hapticTap();
       },
     });
-    // pointerdown は canvas、keydown はフォーカス不要の window で受ける（PC 開発用 Space）。
-    inputQueue.attach(canvas, window);
+    // pointerdown / keydown とも window で受ける。iOS ではシェルのハプティクスレイヤ
+    // （透明スイッチ）が canvas を覆うため、canvas 直付けだとタップが届かない。
+    // バブリング後の window で拾えばオーバレイ越しでも同一 timeStamp で取得できる。
+    inputQueue.attach(window);
     this.#inputQueue = inputQueue;
 
     const { startedAt } = ctx.audio.playSong(songBuffer, ctx.clock.now() + SONG_LEAD_SEC);
@@ -160,7 +173,13 @@ class MetronomeGame implements Minigame {
     const scene = this.#scene;
     const inputQueue = this.#inputQueue;
     const loop = this.#loop;
-    if (ctx === null || session === null || scene === null || inputQueue === null || loop === null) {
+    if (
+      ctx === null ||
+      session === null ||
+      scene === null ||
+      inputQueue === null ||
+      loop === null
+    ) {
       return;
     }
 

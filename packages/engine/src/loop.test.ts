@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { GameLoop } from './loop';
+import { describe, expect, it } from "vitest";
+import { GameLoop } from "./loop";
 
 /** 手動駆動できる rAF スタブ。 */
 function makeRaf(): {
@@ -29,8 +29,8 @@ function makeRaf(): {
   };
 }
 
-describe('GameLoop', () => {
-  it('注入 raf で駆動され、cb に rAF 時刻（秒）を渡す', () => {
+describe("GameLoop", () => {
+  it("注入 raf で駆動され、cb に rAF 時刻（秒）を渡す", () => {
     const r = makeRaf();
     const loop = new GameLoop({ raf: r.raf, caf: r.caf });
     const seen: number[] = [];
@@ -43,7 +43,7 @@ describe('GameLoop', () => {
     expect(seen).toEqual([0, 0.016, 0.032]);
   });
 
-  it('fps を EMA 更新し、metrics オブジェクトは再利用する', () => {
+  it("fps を EMA 更新し、metrics オブジェクトは再利用する", () => {
     const r = makeRaf();
     let nowVal = 0;
     const loop = new GameLoop({ raf: r.raf, caf: r.caf, now: () => nowVal });
@@ -64,7 +64,7 @@ describe('GameLoop', () => {
     expect(metrics.fps).toBeCloseTo(62.5, 6);
   });
 
-  it('fps は変動時に EMA で平滑化される', () => {
+  it("fps は変動時に EMA で平滑化される", () => {
     const r = makeRaf();
     const loop = new GameLoop({ raf: r.raf, caf: r.caf, now: () => 0 });
     loop.start(() => {});
@@ -75,7 +75,7 @@ describe('GameLoop', () => {
     expect(loop.metrics.fps).toBeCloseTo(95, 6);
   });
 
-  it('stop でループが止まる', () => {
+  it("stop でループが止まる", () => {
     const r = makeRaf();
     const loop = new GameLoop({ raf: r.raf, caf: r.caf });
     let calls = 0;

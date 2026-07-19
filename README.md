@@ -9,6 +9,7 @@
 - **ロジックコア**: Rust → Wasm（判定・譜面コンパイル・シンセ）
 - **音源**: MIDI + SoundFont を rustysynth でロード時オフラインレンダ（音声ファイル非同梱）
 - **タイミング**: `AudioContext.currentTime` を唯一のマスタークロックとする判定設計
+- **ハプティクス**: Android は Vibration API、iOS Safari は透明な `<input type="checkbox" switch>` オーバレイ（WebKit ネイティブスイッチの触覚。iOS 26.5 以降プログラム発火は不可のため実タップで鳴らす）
 - **構成**: pnpm + cargo workspace のモジュラモノリス（境界は dependency-cruiser で CI 強制）
 
 ## セットアップ
@@ -25,19 +26,19 @@ pnpm dev                         # vite dev server (--host 付き、実機は同
 
 ## 主要コマンド
 
-| コマンド | 内容 |
-|---|---|
-| `pnpm dev` / `pnpm build` / `pnpm preview` | apps/web の開発・ビルド・プレビュー |
-| `pnpm build:wasm` | wasm-pack ビルド（TS 側より先に一度実行が必要） |
-| `pnpm typecheck` | 全パッケージ tsc --noEmit（TypeScript 7） |
-| `pnpm lint` / `pnpm format` | oxlint / oxfmt |
-| `pnpm test` | Vitest（packages/engine, packages/shell） |
-| `pnpm test:e2e` | Playwright スモーク（要 `pnpm build`） |
-| `pnpm depcruise` | モジュール境界検査 |
-| `cargo test --workspace` | Rust テスト（判定・譜面・シンセ・SF2 生成） |
-| `pnpm gen:assets` | charts/ の MIDI・SF2 を再生成 |
-| `pnpm run build:cf` | Workers Builds 用フルビルド（rustup/wasm-pack 導入 → wasm → wasm-opt → web） |
-| `pnpm deploy` | ビルドして Cloudflare Workers にデプロイ |
+| コマンド                                   | 内容                                                                         |
+| ------------------------------------------ | ---------------------------------------------------------------------------- |
+| `pnpm dev` / `pnpm build` / `pnpm preview` | apps/web の開発・ビルド・プレビュー                                          |
+| `pnpm build:wasm`                          | wasm-pack ビルド（TS 側より先に一度実行が必要）                              |
+| `pnpm typecheck`                           | 全パッケージ tsc --noEmit（TypeScript 7）                                    |
+| `pnpm lint` / `pnpm format`                | oxlint / oxfmt                                                               |
+| `pnpm test`                                | Vitest（packages/engine, packages/shell）                                    |
+| `pnpm test:e2e`                            | Playwright スモーク（要 `pnpm build`）                                       |
+| `pnpm depcruise`                           | モジュール境界検査                                                           |
+| `cargo test --workspace`                   | Rust テスト（判定・譜面・シンセ・SF2 生成）                                  |
+| `pnpm gen:assets`                          | charts/ の MIDI・SF2 を再生成                                                |
+| `pnpm run build:cf`                        | Workers Builds 用フルビルド（rustup/wasm-pack 導入 → wasm → wasm-opt → web） |
+| `pnpm deploy`                              | ビルドして Cloudflare Workers にデプロイ                                     |
 
 ## デプロイ（Cloudflare Workers Builds）
 
@@ -47,12 +48,12 @@ pnpm dev                         # vite dev server (--host 付き、実機は同
 
 ダッシュボード（Workers & Pages → Create → Import a repository）での設定:
 
-| 項目 | 値 |
-|---|---|
-| Git repository / branch | `Stead08/threejs-claude` / `main` |
-| Root directory | （空欄 = リポジトリルート） |
-| Build command | `pnpm run build:cf` |
-| Deploy command | `pnpm --filter web deploy` |
+| 項目                                 | 値                                                |
+| ------------------------------------ | ------------------------------------------------- |
+| Git repository / branch              | `Stead08/threejs-claude` / `main`                 |
+| Root directory                       | （空欄 = リポジトリルート）                       |
+| Build command                        | `pnpm run build:cf`                               |
+| Deploy command                       | `pnpm --filter web deploy`                        |
 | Non-production branch deploy command | `pnpm --filter web exec wrangler versions upload` |
 
 ビルドイメージに wasm32 ターゲット・wasm-pack が無いため、`scripts/workers-build.sh`

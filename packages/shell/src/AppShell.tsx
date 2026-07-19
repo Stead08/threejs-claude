@@ -1,14 +1,17 @@
 // シェル全体のルートコンポーネント。appState に応じて画面を出し分ける。
 // appState === 'play' の間はどの状態画面も描画しない（HUD はゲーム側 DOM が担当し、
-// React ツリーはゲームループから更新されない）。横向き警告のみ appState と無関係に常時マウントする。
+// React ツリーはゲームループから更新されない）。例外は iOS 用の PlayHapticLayer
+// （静的な透明スイッチのみでゲームループから更新されない）。
+// 横向き警告のみ appState と無関係に常時マウントする。
 
-import type { ReactElement } from 'react';
-import { useShellStore } from './store';
-import { TitleScreen } from './screens/TitleScreen';
-import { LoadingScreen } from './screens/LoadingScreen';
-import { ResultScreen } from './screens/ResultScreen';
-import { SettingsScreen } from './screens/SettingsScreen';
-import { OrientationWarning } from './screens/OrientationWarning';
+import type { ReactElement } from "react";
+import { useShellStore } from "./store";
+import { TitleScreen } from "./screens/TitleScreen";
+import { LoadingScreen } from "./screens/LoadingScreen";
+import { ResultScreen } from "./screens/ResultScreen";
+import { SettingsScreen } from "./screens/SettingsScreen";
+import { OrientationWarning } from "./screens/OrientationWarning";
+import { PlayHapticLayer } from "./PlayHapticLayer";
 
 export interface AppShellProps {
   /** タイトルタップ時。呼び出し元（apps/web）が unlock → load → createScene → start を行う。 */
@@ -23,10 +26,11 @@ export function AppShell({ onStart, onRetry }: AppShellProps): ReactElement {
 
   return (
     <>
-      {appState === 'title' && <TitleScreen onStart={onStart} />}
-      {appState === 'loading' && <LoadingScreen />}
-      {appState === 'result' && <ResultScreen onRetry={onRetry} />}
-      {settingsOpen && appState !== 'play' && <SettingsScreen />}
+      {appState === "title" && <TitleScreen onStart={onStart} />}
+      {appState === "loading" && <LoadingScreen />}
+      {appState === "play" && <PlayHapticLayer />}
+      {appState === "result" && <ResultScreen onRetry={onRetry} />}
+      {settingsOpen && appState !== "play" && <SettingsScreen />}
       <OrientationWarning />
     </>
   );

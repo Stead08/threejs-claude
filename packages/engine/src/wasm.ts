@@ -2,7 +2,7 @@
 // 注: wasm-pkg は後続の wasm-pack ビルドで生成されるため、typecheck 時点では
 // '../wasm-pkg/rhythm_wasm.js' の解決エラーが出るが、これは想定内（他エラーは無し）。
 
-import init, { renderNote, Session } from '../wasm-pkg/rhythm_wasm.js';
+import init, { renderNote, Session } from "../wasm-pkg/rhythm_wasm.js";
 
 /** 判定・接近設定。config_json として wasm へ渡す。 */
 export interface SessionConfig {

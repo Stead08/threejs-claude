@@ -1,6 +1,6 @@
 // Just 判定演出用の星形ジオメトリ生成。ThreeShape → ShapeGeometry のフラットな星（一度だけ生成して共有される想定）。
 
-import { Shape, ShapeGeometry } from 'three';
+import { Shape, ShapeGeometry } from "three";
 
 /** outerRadius/innerRadius の頂点を交互に結んだ points 個の角を持つ星形ジオメトリを作る。 */
 export function createStarGeometry(
