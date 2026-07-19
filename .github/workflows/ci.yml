@@ -54,6 +54,12 @@ jobs:
       - run: pnpm build
       - run: pnpm --filter web exec playwright install --with-deps chromium
       - run: pnpm test:e2e
+      # 失敗時は error-context（ARIA スナップショット）をログへ直接出す。
+      # アーティファクト取得が難しい環境からでもログだけで画面状態を判別できる。
+      - name: Dump e2e failure context
+        if: failure()
+        run: |
+          find apps/web/test-results -name 'error-context.md' -print -exec cat {} \; || true
       # 失敗時はトレース（スクリーンショット・コンソール・ネットワーク込み）を回収して
       # CI 環境でしか再現しない問題を手元で解析できるようにする。
       - uses: actions/upload-artifact@v4

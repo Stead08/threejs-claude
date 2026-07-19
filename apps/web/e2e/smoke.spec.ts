@@ -7,7 +7,39 @@
 
 import { expect, test } from "@playwright/test";
 
+// CI でのみ再現する失敗の診断用: ブラウザコンソールとページエラーを収集し、
+// 失敗時に stdout（CI ログ）へ出力する。トレースはアーティファクト経由でしか
+// 見られないため、ログだけで一次切り分けできるようにしておく。
+const MAX_CAPTURED_LOGS = 100;
+
 test.describe("metronome smoke", () => {
+  const captured: string[] = [];
+
+  test.beforeEach(({ page }) => {
+    captured.length = 0;
+    page.on("console", (msg) => {
+      if (captured.length < MAX_CAPTURED_LOGS) {
+        captured.push(`[console.${msg.type()}] ${msg.text()}`);
+      }
+    });
+    page.on("pageerror", (err) => {
+      if (captured.length < MAX_CAPTURED_LOGS) {
+        captured.push(`[pageerror] ${err.stack ?? err.message}`);
+      }
+    });
+  });
+
+  test.afterEach(() => {
+    const info = test.info();
+    if (info.status === info.expectedStatus) {
+      return;
+    }
+    console.log(`--- browser logs (${captured.length}) ---`);
+    for (const line of captured) {
+      console.log(line);
+    }
+  });
+
   test("タイトル → タップ → ローディング → プレイに到達する", async ({ page }) => {
     await page.goto("/");
 
