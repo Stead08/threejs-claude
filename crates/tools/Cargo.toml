@@ -16,8 +16,13 @@ path = "src/bin/gen_midi.rs"
 name = "gen_sf2"
 path = "src/bin/gen_sf2.rs"
 
+[[bin]]
+name = "render_wav"
+path = "src/bin/render_wav.rs"
+
 [dependencies]
 midly = { workspace = true }
+rhythm-synth = { path = "../synth" }
 
 [dev-dependencies]
 rustysynth = { workspace = true }

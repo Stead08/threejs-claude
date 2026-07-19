@@ -294,11 +294,13 @@ fn drum_notes() -> NoteBuf {
                 }
                 Mode::Ura => {
                     // キック 1・3 拍目 / クラップ全裏拍 / ハイハット各表拍 / 4 拍目裏にオープン。
-                    buf.push(bt(bar), KICK, 110, HIT_LEN);
-                    buf.push(bt(bar + 2), KICK, 110, HIT_LEN);
+                    // 裏拍が主役の区間なので表拍（キック・ハット）を控えめにし、
+                    // クラップを強めて裏打ちの聴き取りやすさを確保する。
+                    buf.push(bt(bar), KICK, 100, HIT_LEN);
+                    buf.push(bt(bar + 2), KICK, 100, HIT_LEN);
                     for k in 0..4 {
-                        buf.push(bt(bar + k) + HALF_BEAT, CLAP, 110, HIT_LEN);
-                        buf.push(bt(bar + k), CHAT, 55, HIT_LEN);
+                        buf.push(bt(bar + k) + HALF_BEAT, CLAP, 115, HIT_LEN);
+                        buf.push(bt(bar + k), CHAT, 45, HIT_LEN);
                     }
                     buf.push(bt(bar + 3) + HALF_BEAT, OHAT, 75, HIT_LEN);
                 }
@@ -385,7 +387,7 @@ fn chord_notes() -> NoteBuf {
                 Mode::Ura => {
                     for k in 0..4 {
                         for key in triad {
-                            buf.push(bt(bar + k) + HALF_BEAT, key, 75, 100);
+                            buf.push(bt(bar + k) + HALF_BEAT, key, 85, 100);
                         }
                     }
                 }
