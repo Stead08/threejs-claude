@@ -37,7 +37,7 @@ pnpm dev                         # vite dev server (--host 付き、実機は同
 | `cargo test --workspace` | Rust テスト（判定・譜面・シンセ・SF2 生成） |
 | `pnpm gen:assets` | charts/ の MIDI・SF2 を再生成 |
 | `pnpm run build:cf` | Workers Builds 用フルビルド（rustup/wasm-pack 導入 → wasm → wasm-opt → web） |
-| `pnpm deploy` | ビルドして Cloudflare Workers にデプロイ |
+| `pnpm run deploy` | ビルドして Cloudflare Workers にデプロイ（`run` 必須: `pnpm deploy` は pnpm 組み込みコマンドと衝突） |
 
 ## デプロイ（Cloudflare Workers Builds）
 
@@ -52,14 +52,14 @@ pnpm dev                         # vite dev server (--host 付き、実機は同
 | Git repository / branch | `Stead08/threejs-claude` / `main` |
 | Root directory | （空欄 = リポジトリルート） |
 | Build command | `pnpm run build:cf` |
-| Deploy command | `pnpm --filter web deploy` |
+| Deploy command | `pnpm --filter web run deploy` |
 | Non-production branch deploy command | `pnpm --filter web exec wrangler versions upload` |
 
 ビルドイメージに wasm32 ターゲット・wasm-pack が無いため、`scripts/workers-build.sh`
 （`pnpm run build:cf`）が rustup / wasm-pack をブートストラップし、
 wasm-opt（npm の binaryen）でサイズ最適化してから Vite ビルドする。
 
-- **手動デプロイ**: `pnpm run build:cf && pnpm --filter web deploy`（初回は `wrangler login`）。
+- **手動デプロイ**: `pnpm run build:cf && pnpm --filter web run deploy`（初回は `wrangler login`）。
 - **ローカル確認**: `pnpm build` 後に `pnpm --filter web exec wrangler dev` で本番同等の配信を検証できる。
 
 将来 AudioWorklet + SAB 化で COOP/COEP が必要になった場合も、`apps/web/public/_headers`

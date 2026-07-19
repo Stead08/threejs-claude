@@ -10,7 +10,7 @@
     "build": "pnpm --filter web build",
     "build:cf": "bash scripts/workers-build.sh",
     "preview": "pnpm --filter web preview",
-    "deploy": "pnpm build && pnpm --filter web deploy",
+    "deploy": "pnpm build && pnpm --filter web run deploy",
     "build:wasm": "wasm-pack build crates/wasm --target web --release --out-dir ../../packages/engine/wasm-pkg --out-name rhythm_wasm",
     "typecheck": "pnpm -r run typecheck",
     "lint": "oxlint --deny-warnings",
