@@ -26,4 +26,7 @@ export type { EngineEvent } from './events';
 export { CalibrationStore } from './calibration';
 export type { Calibration, StorageLike } from './calibration';
 
+export { HAPTIC_TAP_MS, detectHapticsMode, hapticTap } from './haptics';
+export type { HapticsMode, NavigatorLike } from './haptics';
+
 export type { Minigame, MinigameContext, MinigameScene, VerbSpec } from './minigame';

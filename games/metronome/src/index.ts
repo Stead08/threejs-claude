@@ -8,6 +8,7 @@ import {
   RenderClient,
   createSession,
   decodeEvents,
+  hapticTap,
   initWasm,
   loadBinary,
   renderNoteBuffer,
@@ -133,10 +134,15 @@ class MetronomeGame implements Minigame {
       inputOffsetMs: readCalibration().inputOffsetMs,
       onTap: () => {
         ctx.audio.playSfx(tapBuffer);
+        // Android 等 Vibration API 対応環境の触覚。iOS はシェル側の透明スイッチ
+        // （PlayHapticLayer）がタップ時にネイティブハプティックを鳴らす。
+        hapticTap();
       },
     });
-    // pointerdown は canvas、keydown はフォーカス不要の window で受ける（PC 開発用 Space）。
-    inputQueue.attach(canvas, window);
+    // pointerdown / keydown とも window で受ける。iOS ではシェルのハプティクスレイヤ
+    // （透明スイッチ）が canvas を覆うため、canvas 直付けだとタップが届かない。
+    // バブリング後の window で拾えばオーバレイ越しでも同一 timeStamp で取得できる。
+    inputQueue.attach(window);
     this.#inputQueue = inputQueue;
 
     const { startedAt } = ctx.audio.playSong(songBuffer, ctx.clock.now() + SONG_LEAD_SEC);

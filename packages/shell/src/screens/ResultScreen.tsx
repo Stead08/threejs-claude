@@ -5,6 +5,7 @@ import { theme } from '../theme';
 import { useShellStore } from '../store';
 import { parseStats } from '../parse-stats';
 import { PERFECT_LABEL, RANK_LABELS, rank } from '../rank';
+import { HapticButton } from '../HapticButton';
 
 export interface ResultScreenProps {
   onRetry: () => void;
@@ -102,8 +103,7 @@ export function ResultScreen({ onRetry }: ResultScreenProps): ReactElement {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px', width: '80vw', maxWidth: '420px' }}>
         <RetryButton onRetry={onRetry} />
-        <button
-          type="button"
+        <HapticButton
           onClick={openSettings}
           style={{
             padding: '10px',
@@ -115,7 +115,7 @@ export function ResultScreen({ onRetry }: ResultScreenProps): ReactElement {
           }}
         >
           設定
-        </button>
+        </HapticButton>
       </div>
     </div>
   );
@@ -123,8 +123,7 @@ export function ResultScreen({ onRetry }: ResultScreenProps): ReactElement {
 
 function RetryButton({ onRetry }: { onRetry: () => void }): ReactElement {
   return (
-    <button
-      type="button"
+    <HapticButton
       onClick={onRetry}
       style={{
         padding: '14px',
@@ -137,6 +136,6 @@ function RetryButton({ onRetry }: { onRetry: () => void }): ReactElement {
       }}
     >
       もういちど
-    </button>
+    </HapticButton>
   );
 }

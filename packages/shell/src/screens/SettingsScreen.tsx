@@ -4,6 +4,7 @@
 import type { ChangeEvent, ReactElement } from 'react';
 import { theme } from '../theme';
 import { useShellStore } from '../store';
+import { HapticButton } from '../HapticButton';
 
 const OFFSET_MIN = -200;
 const OFFSET_MAX = 200;
@@ -75,8 +76,7 @@ export function SettingsScreen(): ReactElement {
           style={{ width: '100%' }}
         />
 
-        <button
-          type="button"
+        <HapticButton
           onClick={closeSettings}
           style={{
             marginTop: '24px',
@@ -90,7 +90,7 @@ export function SettingsScreen(): ReactElement {
           }}
         >
           とじる
-        </button>
+        </HapticButton>
       </div>
     </div>
   );

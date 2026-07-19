@@ -9,6 +9,7 @@
 - **ロジックコア**: Rust → Wasm（判定・譜面コンパイル・シンセ）
 - **音源**: MIDI + SoundFont を rustysynth でロード時オフラインレンダ（音声ファイル非同梱）
 - **タイミング**: `AudioContext.currentTime` を唯一のマスタークロックとする判定設計
+- **ハプティクス**: Android は Vibration API、iOS Safari は透明な `<input type="checkbox" switch>` オーバレイ（WebKit ネイティブスイッチの触覚。iOS 26.5 以降プログラム発火は不可のため実タップで鳴らす）
 - **構成**: pnpm + cargo workspace のモジュラモノリス（境界は dependency-cruiser で CI 強制）
 
 ## セットアップ

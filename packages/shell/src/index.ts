@@ -11,6 +11,12 @@ export type { Stats, RankHistogram, RankGrade, RankResult } from './rank';
 
 export { parseStats } from './parse-stats';
 
+export { HapticButton } from './HapticButton';
+export type { HapticButtonProps } from './HapticButton';
+export { HapticSwitch } from './HapticSwitch';
+export type { HapticSwitchProps } from './HapticSwitch';
+export { PlayHapticLayer } from './PlayHapticLayer';
+
 export { TitleScreen } from './screens/TitleScreen';
 export { LoadingScreen } from './screens/LoadingScreen';
 export { ResultScreen } from './screens/ResultScreen';

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { theme } from '../theme';
 import { useShellStore } from '../store';
+import { HapticButton } from '../HapticButton';
 
 export interface TitleScreenProps {
   onStart: () => Promise<void>;
@@ -26,8 +27,7 @@ export function TitleScreen({ onStart }: TitleScreenProps): ReactElement {
 
   return (
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'auto' }}>
-      <button
-        type="button"
+      <HapticButton
         onClick={handleStart}
         disabled={starting}
         style={{
@@ -74,10 +74,9 @@ export function TitleScreen({ onStart }: TitleScreenProps): ReactElement {
         >
           {starting ? 'よみこみちゅう…' : 'タップではじめる'}
         </span>
-      </button>
-      <button
-        type="button"
-        aria-label="設定"
+      </HapticButton>
+      <HapticButton
+        ariaLabel="設定"
         onClick={openSettings}
         style={{
           position: 'fixed',
@@ -95,7 +94,7 @@ export function TitleScreen({ onStart }: TitleScreenProps): ReactElement {
         }}
       >
         ⚙
-      </button>
+      </HapticButton>
     </div>
   );
 }
