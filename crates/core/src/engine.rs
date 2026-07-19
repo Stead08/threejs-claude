@@ -237,7 +237,9 @@ impl Engine {
                 self.resolved[i] = true;
                 self.stats.miss += 1;
                 self.stats.judged += 1;
-                events.push(Event::AutoMiss { cue_index: i as u32 });
+                events.push(Event::AutoMiss {
+                    cue_index: i as u32,
+                });
             }
         }
     }
