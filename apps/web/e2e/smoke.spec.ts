@@ -82,4 +82,32 @@ test.describe("metronome smoke", () => {
     await expect(page.getByText("タップではじめる")).toHaveCount(0);
     await expect(page.getByRole("progressbar")).toHaveCount(0);
   });
+
+  test("ゲーム選択でメトロノームを選んで起動できる", async ({ page }) => {
+    await page.goto("/");
+
+    // 初回訪問では自動でチュートリアルが開くので「わかった！」で閉じる。
+    const tutorialClose = page.getByText("わかった！");
+    await expect(tutorialClose).toBeVisible();
+    await tutorialClose.tap();
+    await expect(tutorialClose).toHaveCount(0);
+
+    // 選択セクション: カタログの両ゲームがカードで見える。
+    await expect(page.getByText("ゲームをえらぶ")).toBeVisible();
+    await expect(page.getByText("ウラオモテ")).toBeVisible();
+    const metronomeCard = page.getByRole("button", { name: "メトロノーム" });
+    await expect(metronomeCard).toBeVisible();
+
+    // メトロノームを選択してから開始する。
+    await metronomeCard.tap();
+    await page.getByText("タップではじめる").tap();
+
+    // 選択したゲームが URL に反映される（リロードでの「もういちど」用）。
+    await expect.poll(() => new URL(page.url()).searchParams.get("game")).toBe("metronome");
+
+    // プレイ到達（fps HUD 出現、タイトルは消える）。
+    await expect(page.locator("canvas#game")).toBeVisible();
+    await expect(page.getByText(/fps/i)).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText("タップではじめる")).toHaveCount(0);
+  });
 });

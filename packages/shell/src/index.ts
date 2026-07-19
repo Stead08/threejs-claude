@@ -1,7 +1,7 @@
 // packages/shell の公開エクスポート（M0-SPEC §8）。
 
 export { AppShell } from "./AppShell";
-export type { AppShellProps } from "./AppShell";
+export type { AppShellProps, GameChoice } from "./AppShell";
 
 export { shellStore, calibrationStore, useShellStore } from "./store";
 export type { ShellState, AppState } from "./store";

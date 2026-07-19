@@ -42,6 +42,8 @@ export interface ShellState {
   calibration: Calibration;
   settingsOpen: boolean;
   tutorialOpen: boolean;
+  /** タイトルのゲーム選択で選ばれている ID。未設定（null）ならカタログ先頭を既定にする。 */
+  selectedGameId: string | null;
 
   setAppState: (appState: AppState) => void;
   setLoadProgress: (ratio: number) => void;
@@ -52,7 +54,9 @@ export interface ShellState {
   closeSettings: () => void;
   openTutorial: () => void;
   closeTutorial: () => void;
-  /** タイトルへ戻す（もういちど用に進捗/結果をリセット）。 */
+  /** タイトルのゲーム選択。プレイするゲームを切り替える。 */
+  setSelectedGameId: (gameId: string) => void;
+  /** タイトルへ戻す（もういちど用に進捗/結果をリセット）。選択ゲームは保持する。 */
   resetToTitle: () => void;
 }
 
@@ -64,6 +68,7 @@ export const shellStore = createStore<ShellState>((set) => ({
   calibration: calibrationStore.get(),
   settingsOpen: false,
   tutorialOpen: false,
+  selectedGameId: null,
 
   setAppState: (appState): void => set({ appState }),
   setLoadProgress: (ratio): void => set({ loadProgress: ratio }),
@@ -76,6 +81,7 @@ export const shellStore = createStore<ShellState>((set) => ({
   closeSettings: (): void => set({ settingsOpen: false }),
   openTutorial: (): void => set({ tutorialOpen: true }),
   closeTutorial: (): void => set({ tutorialOpen: false }),
+  setSelectedGameId: (gameId): void => set({ selectedGameId: gameId }),
   resetToTitle: (): void => set({ appState: "title", loadProgress: 0, resultJson: null }),
 }));
 
