@@ -264,7 +264,7 @@ export interface Minigame {
 
 ## 10. ルート構成ファイル（オーケストレーターが用意済み）
 
-root package.json（scripts: dev/build/build:wasm/typecheck/lint/test/test:e2e/depcruise/gen:assets）、pnpm-workspace.yaml、Cargo.toml（workspace）、.oxlintrc.json、tsconfig.base.json、.dependency-cruiser.cjs、.gitignore、docs/ci-workflow.yml（GitHub App の workflows 権限がないため .github/ でなく docs/ に配置。有効化は手動移動）。**実装エージェントはルートファイルを変更しない**（変更が必要ならレポートに書く）。
+root package.json（scripts: dev/build/build:wasm/typecheck/lint/test/test:e2e/depcruise/gen:assets）、pnpm-workspace.yaml、Cargo.toml（workspace）、.oxlintrc.json、tsconfig.base.json、.dependency-cruiser.cjs、.gitignore、.github/workflows/ci.yml。**実装エージェントはルートファイルを変更しない**（変更が必要ならレポートに書く）。
 
 ## 11. CI（.github/workflows/ci.yml）
 
