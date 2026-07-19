@@ -1,0 +1,25 @@
+[package]
+name = "rhythm-wasm"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "rhythm_wasm"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+rhythm-core = { path = "../core" }
+rhythm-synth = { path = "../synth" }
+wasm-bindgen = { workspace = true }
+js-sys = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# 開発サンドボックスでは GitHub Releases からの binaryen (wasm-opt) ダウンロードが
+# egress ポリシーで遮断される（403）ため、wasm-pack の自動 wasm-opt を無効化している。
+# サイズ最適化は CI (.github/workflows/ci.yml の web ジョブ) が apt の binaryen で
+# 明示的に `wasm-opt -Os` を実行して補う。ここを外すと遮断環境で build:wasm が失敗する。
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
