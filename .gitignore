@@ -4,5 +4,6 @@ target/
 packages/engine/wasm-pkg/
 *.tsbuildinfo
 test-results/
+.wrangler/
 playwright-report/
 .DS_Store

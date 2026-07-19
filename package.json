@@ -8,7 +8,9 @@
   "scripts": {
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
+    "build:cf": "bash scripts/workers-build.sh",
     "preview": "pnpm --filter web preview",
+    "deploy": "pnpm build && pnpm --filter web deploy",
     "build:wasm": "wasm-pack build crates/wasm --target web --release --out-dir ../../packages/engine/wasm-pkg --out-name rhythm_wasm",
     "typecheck": "pnpm -r run typecheck",
     "lint": "oxlint --deny-warnings",
@@ -19,6 +21,7 @@
     "gen:assets": "cargo run -p tools --bin gen_midi -- --out charts/metronome.mid && cargo run -p tools --bin gen_sf2 -- --out charts/dev.sf2"
   },
   "devDependencies": {
+    "binaryen": "^131.0.0",
     "dependency-cruiser": "^18.1.0",
     "oxfmt": "^0.59.0",
     "oxlint": "^1.74.0",
@@ -27,7 +30,9 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "esbuild"
+      "esbuild",
+      "sharp",
+      "workerd"
     ]
   }
 }

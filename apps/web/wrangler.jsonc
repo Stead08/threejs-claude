@@ -1,0 +1,12 @@
+// Cloudflare Workers (Static Assets) 設定。Worker スクリプトは持たず dist/ を静的配信する。
+// デプロイ: pnpm build → apps/web で `wrangler deploy`（CI は .github/workflows/deploy.yml）。
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "threejs-claude",
+  "compatibility_date": "2026-07-19",
+  "assets": {
+    "directory": "./dist",
+    // SPA なので未知パスは index.html にフォールバックさせる（200 で返す）。
+    "not_found_handling": "single-page-application"
+  }
+}

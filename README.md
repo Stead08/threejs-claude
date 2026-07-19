@@ -36,6 +36,34 @@ pnpm dev                         # vite dev server (--host 付き、実機は同
 | `pnpm depcruise` | モジュール境界検査 |
 | `cargo test --workspace` | Rust テスト（判定・譜面・シンセ・SF2 生成） |
 | `pnpm gen:assets` | charts/ の MIDI・SF2 を再生成 |
+| `pnpm run build:cf` | Workers Builds 用フルビルド（rustup/wasm-pack 導入 → wasm → wasm-opt → web） |
+| `pnpm deploy` | ビルドして Cloudflare Workers にデプロイ |
+
+## デプロイ（Cloudflare Workers Builds）
+
+`apps/web/wrangler.jsonc` の Static Assets 設定で `apps/web/dist/` を静的配信する
+（Worker スクリプトなし・SPA フォールバックあり）。デプロイは Cloudflare の
+[Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/)（Git 連携）で行う。
+
+ダッシュボード（Workers & Pages → Create → Import a repository）での設定:
+
+| 項目 | 値 |
+|---|---|
+| Git repository / branch | `Stead08/threejs-claude` / `main` |
+| Root directory | （空欄 = リポジトリルート） |
+| Build command | `pnpm run build:cf` |
+| Deploy command | `pnpm --filter web deploy` |
+| Non-production branch deploy command | `pnpm --filter web exec wrangler versions upload` |
+
+ビルドイメージに wasm32 ターゲット・wasm-pack が無いため、`scripts/workers-build.sh`
+（`pnpm run build:cf`）が rustup / wasm-pack をブートストラップし、
+wasm-opt（npm の binaryen）でサイズ最適化してから Vite ビルドする。
+
+- **手動デプロイ**: `pnpm run build:cf && pnpm --filter web deploy`（初回は `wrangler login`）。
+- **ローカル確認**: `pnpm build` 後に `pnpm --filter web exec wrangler dev` で本番同等の配信を検証できる。
+
+将来 AudioWorklet + SAB 化で COOP/COEP が必要になった場合も、`apps/web/public/_headers`
+にヘッダーを置けば Workers Static Assets がそのまま配信する（Pages 移行は不要）。
 
 ## リポジトリ構成
 
