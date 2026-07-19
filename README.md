@@ -43,7 +43,8 @@ pnpm dev                         # vite dev server (--host 付き、実機は同
 ## デプロイ（Cloudflare Workers Builds）
 
 `apps/web/wrangler.jsonc` の Static Assets 設定で `apps/web/dist/` を静的配信する
-（Worker スクリプトなし・SPA フォールバックあり）。デプロイは Cloudflare の
+（SPA フォールバックあり）。`/api/*` のみ Worker スクリプト（`apps/web/src/worker.ts`、
+テレメトリー受け口）が先に実行される。デプロイは Cloudflare の
 [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/)（Git 連携）で行う。
 
 ダッシュボード（Workers & Pages → Create → Import a repository）での設定:
@@ -65,6 +66,28 @@ wasm-opt（npm の binaryen）でサイズ最適化してから Vite ビルド�
 
 将来 AudioWorklet + SAB 化で COOP/COEP が必要になった場合も、`apps/web/public/_headers`
 にヘッダーを置けば Workers Static Assets がそのまま配信する（Pages 移行は不要）。
+
+## テレメトリー（実機ログ）
+
+iOS Safari 等の実機で「読み込み中のまま進まない」を遠隔診断するためのクライアントテレメトリーを備える。
+
+- **クライアント** (`apps/web/src/telemetry.ts`): タップ〜プレイ到達までの段階マーク
+  （unlock / モジュールロード / レンダ進捗 0.1 刻み / シーン生成）をブレッドクラムとして記録し、
+  グローバルエラー・起動失敗・「タップ後 30 秒で play 未到達」（load-stuck）を
+  `POST /api/telemetry` へ送信する。送信失敗はゲームへ影響しない。
+- **サーバ** (`apps/web/src/worker.ts`): 受信 JSON を構造化ログとして出力する。
+  `observability.enabled`（wrangler.jsonc）により [Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/)
+  に 7 日間保存される。
+
+ログの見方:
+
+- ダッシュボード: Workers & Pages → `threejs-claude` → **Logs** タブ。
+  `$cloudflare.$metadata.error` や `$workers.event` でフィルタでき、エラー系イベント
+  （`window-error` / `unhandled-rejection` / `start-failed` / `load-stuck`）は error レベルで出る。
+- CLI: `pnpm --filter web exec wrangler tail`（リアルタイム）。
+
+`load-stuck` ログの `breadcrumbs` で最後に到達した段階（例: `audio:unlocked` 無し → unlock で停止、
+`load:progress 0.8` 止まり → wasm 初期化で停止）を特定できる。
 
 ## リポジトリ構成
 

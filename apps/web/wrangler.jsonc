@@ -1,12 +1,23 @@
-// Cloudflare Workers (Static Assets) 設定。Worker スクリプトは持たず dist/ を静的配信する。
+// Cloudflare Workers (Static Assets) 設定。dist/ を静的配信しつつ、/api/* のみ
+// Worker スクリプト（src/worker.ts = クライアントテレメトリー受け口）を先に実行する。
 // デプロイ: pnpm build → apps/web で `wrangler deploy`（CI は .github/workflows/deploy.yml）。
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "threejs-claude",
   "compatibility_date": "2026-07-19",
+  "main": "src/worker.ts",
   "assets": {
     "directory": "./dist",
+    // Worker から env.ASSETS.fetch() でアセットへ委譲するためのバインディング。
+    "binding": "ASSETS",
     // SPA なので未知パスは index.html にフォールバックさせる（200 で返す）。
     "not_found_handling": "single-page-application",
+    // /api/* は SPA フォールバックより先に必ず Worker を通す。
+    "run_worker_first": ["/api/*"],
+  },
+  // Workers Logs（テレメトリーの保存先。ダッシュボードの Logs タブで 7 日間検索できる）。
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
   },
 }

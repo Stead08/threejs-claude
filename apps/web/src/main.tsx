@@ -10,6 +10,17 @@ import { createRoot } from "react-dom/client";
 import { AudioEngine, fromAudioContext } from "@rhythm/engine";
 import type { AudioClock, Minigame, MinigameContext, MinigameScene } from "@rhythm/engine";
 import { AppShell, shellStore } from "@rhythm/shell";
+import {
+  armLoadWatchdog,
+  disarmLoadWatchdog,
+  initTelemetry,
+  mark,
+  report,
+  reportError,
+} from "./telemetry";
+
+// 以降のモジュール評価時エラー（要素欠落等）も window error 経由で拾えるよう最初に設置する。
+initTelemetry();
 
 /** ゲームレジストリ。動的 import によりコード分割される（M0 は metronome の 1 本のみ）。 */
 const games: Record<string, () => Promise<{ default: Minigame }>> = {
@@ -68,8 +79,21 @@ function handleFinished(statsJson: string): void {
 
 /** タイトルタップ時のメインフロー。失敗時はタイトルへ戻す。 */
 async function startGame(): Promise<void> {
+  const startedAtMs = performance.now();
+  mark("start:tap", { audioState: audioEngine.context.state });
+  // 実機で「読み込み中のまま止まる」を検知する。到達段階はブレッドクラム、
+  // 停止時点の進捗・音声状態はスナップショットとして Workers Logs に載る。
+  armLoadWatchdog(() => ({
+    appState: shellStore.getState().appState,
+    loadProgress: shellStore.getState().loadProgress,
+    audioState: audioEngine.context.state,
+  }));
   try {
     await audioEngine.unlock();
+    mark("audio:unlocked", {
+      audioState: audioEngine.context.state,
+      sampleRate: audioEngine.context.sampleRate,
+    });
     // AudioClock はモジュールロード時（suspended 中）に構築されており、その時点の
     // フォールバック offset はタイトル画面での待機時間ぶんズレている。running に
     // なった今、正しい対応で即時再確立する（プレイ冒頭のタップ変換ズレの防止）。
@@ -84,6 +108,7 @@ async function startGame(): Promise<void> {
       throw new Error(`未登録のゲームです: ${ACTIVE_GAME_ID}`);
     }
     const mod = await loadGame();
+    mark("game:module-loaded");
     const game = mod.default;
 
     const ctx: MinigameContext = {
@@ -93,20 +118,34 @@ async function startGame(): Promise<void> {
       onFinished: handleFinished,
     };
 
+    // 進捗はストア反映に加え 0.1 刻みでブレッドクラム化する（停止位置の特定用）。
+    let lastMarkedRatio = -1;
     await game.load(ctx, (ratio: number): void => {
       shellStore.getState().setLoadProgress(ratio);
+      if (ratio >= 1 || ratio - lastMarkedRatio >= 0.1) {
+        lastMarkedRatio = ratio;
+        mark("load:progress", { ratio: Math.round(ratio * 100) / 100 });
+      }
     });
+    mark("game:loaded");
 
     const scene = game.createScene(canvas);
+    mark("scene:created");
     currentGame = game;
     currentScene = scene;
     resizeCurrentScene();
 
     shellStore.getState().setAppState("play");
     game.start();
+    disarmLoadWatchdog();
+    report("load-ok", { elapsedMs: Math.round(performance.now() - startedAtMs) });
   } catch (err) {
+    disarmLoadWatchdog();
     // ロード/開始に失敗したらタイトルへ戻す（次のタップでやり直せる）。
     console.error("[main] failed to start game", err);
+    reportError("start-failed", err, {
+      elapsedMs: Math.round(performance.now() - startedAtMs),
+    });
     shellStore.getState().resetToTitle();
     throw err;
   }
