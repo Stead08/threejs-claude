@@ -39,7 +39,9 @@ let initPromise: Promise<void> | null = null;
 /** wasm を初期化する。多重呼び出しは同一 Promise を返す。 */
 export function initWasm(): Promise<void> {
   if (initPromise === null) {
-    initPromise = init().then(() => undefined);
+    initPromise = (async (): Promise<void> => {
+      await init();
+    })();
   }
   return initPromise;
 }

@@ -44,6 +44,17 @@ export class AudioClock {
     return this.#offset;
   }
 
+  /**
+   * offset 履歴を破棄して現在のクロック対から即時に再確立する。
+   * suspend 中は audio 時計だけが止まるため、perf ⇄ audio の対応は中断時間ぶん平行移動する。
+   * EMA（α=0.1・毎秒更新）では新しい対応への収束に 10 秒以上かかり、その間の入力変換が
+   * 系統的にズレる。unlock / resume 直後（AudioContext が running になった直後）に呼ぶこと。
+   */
+  reset(): void {
+    this.#hasOffset = false;
+    this.#refresh(this.#sources.audioCurrentTimeSec());
+  }
+
   /** performance 時刻（ミリ秒）を audio 時刻（秒）へ変換する。毎秒 offset を更新する。 */
   perfToAudio(perfMs: number): number {
     const nowSec = this.#sources.audioCurrentTimeSec();

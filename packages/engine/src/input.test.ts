@@ -114,4 +114,21 @@ describe('InputQueue', () => {
     target.fire('pointerdown', { timeStamp: 1000 });
     expect(queue.drain()).toHaveLength(0);
   });
+
+  it('keyboardTarget を分離できる（pointer は target、keydown は keyboardTarget）', () => {
+    const target = new FakeTarget();
+    const keyboard = new FakeTarget();
+    const queue = new InputQueue(identityClock());
+    queue.attach(target, keyboard);
+    // keydown は keyboardTarget 側のみで受ける（canvas はフォーカス不能のため window を渡す想定）。
+    expect(target.handlers.has('keydown')).toBe(false);
+    expect(keyboard.handlers.has('keydown')).toBe(true);
+    keyboard.fire('keydown', { timeStamp: 1500, code: 'Space', repeat: false });
+    target.fire('pointerdown', { timeStamp: 2000 });
+    expect(Array.from(queue.drain())).toEqual([1.5, 0, 2.0, 0]);
+    // detach で両方外れる。
+    queue.detach();
+    keyboard.fire('keydown', { timeStamp: 3000, code: 'Space', repeat: false });
+    expect(queue.drain()).toHaveLength(0);
+  });
 });

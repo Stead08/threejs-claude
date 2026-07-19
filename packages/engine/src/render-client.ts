@@ -32,7 +32,7 @@ export class RenderClient {
       const cleanup = (): void => {
         worker.terminate();
       };
-      worker.onmessage = (e: MessageEvent<RenderResponse>): void => {
+      worker.addEventListener('message', (e: MessageEvent<RenderResponse>): void => {
         const msg = e.data;
         switch (msg.type) {
           case 'progress':
@@ -47,11 +47,11 @@ export class RenderClient {
             cleanup();
             break;
         }
-      };
-      worker.onerror = (e: ErrorEvent): void => {
+      });
+      worker.addEventListener('error', (e: ErrorEvent): void => {
         reject(new Error(e.message || 'render worker error'));
         cleanup();
-      };
+      });
       const request: RenderRequest = {
         midi: options.midi,
         sf2: options.sf2,

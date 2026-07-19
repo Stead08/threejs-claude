@@ -64,8 +64,9 @@ export class AudioEngine {
   toAudioBuffer(sampleRate: number, left: Float32Array, right: Float32Array): AudioBuffer {
     const length = Math.min(left.length, right.length);
     const buffer = this.#ctx.createBuffer(2, length, sampleRate);
-    buffer.copyToChannel(left, 0);
-    buffer.copyToChannel(right, 1);
+    // copyToChannel は Float32Array<ArrayBuffer> を要求する。実行時は通常の ArrayBuffer 裏付けなので安全にキャスト。
+    buffer.copyToChannel(left as Float32Array<ArrayBuffer>, 0);
+    buffer.copyToChannel(right as Float32Array<ArrayBuffer>, 1);
     return buffer;
   }
 
@@ -106,13 +107,17 @@ export class AudioEngine {
   /**
    * visibilitychange で自動 suspend/resume するリスナを登録する。
    * 返り値は登録解除関数。document 相当は注入可能。
+   * onResume は resume 完了後に呼ばれる（AudioClock.reset() の配線用 — suspend 中に
+   * perf ⇄ audio の対応が平行移動するため、復帰直後に対応の再確立が必要）。
    */
-  attachVisibilityAutoSuspend(doc: VisibilityDocument): () => void {
+  attachVisibilityAutoSuspend(doc: VisibilityDocument, onResume?: () => void): () => void {
     const handler = (): void => {
       if (doc.hidden) {
         void this.suspend();
       } else {
-        void this.resume();
+        void this.resume().then(() => {
+          onResume?.();
+        });
       }
     };
     doc.addEventListener('visibilitychange', handler);

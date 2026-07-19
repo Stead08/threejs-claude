@@ -20,7 +20,7 @@ export type RenderResponse =
 // DedicatedWorkerGlobalScope の最小型（DOM lib の Window.postMessage と衝突させないため self を再解釈）。
 interface WorkerScope {
   postMessage(message: RenderResponse, transfer?: Transferable[]): void;
-  onmessage: ((e: MessageEvent<RenderRequest>) => void) | null;
+  addEventListener(type: 'message', listener: (e: MessageEvent<RenderRequest>) => void): void;
 }
 
 const ctx = self as unknown as WorkerScope;
@@ -28,7 +28,9 @@ const ctx = self as unknown as WorkerScope;
 let initialized: Promise<void> | null = null;
 function ensureInit(): Promise<void> {
   if (initialized === null) {
-    initialized = init().then(() => undefined);
+    initialized = (async (): Promise<void> => {
+      await init();
+    })();
   }
   return initialized;
 }
@@ -56,9 +58,9 @@ async function handleRequest(req: RenderRequest): Promise<void> {
   ] as Transferable[]);
 }
 
-ctx.onmessage = (e: MessageEvent<RenderRequest>): void => {
+ctx.addEventListener('message', (e: MessageEvent<RenderRequest>): void => {
   handleRequest(e.data).catch((err: unknown) => {
     const message = err instanceof Error ? err.message : String(err);
     ctx.postMessage({ type: 'error', message });
   });
-};
+});

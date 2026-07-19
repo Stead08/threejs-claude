@@ -34,6 +34,7 @@ export class InputQueue {
   #count = 0;
 
   #target: EventTarget | null = null;
+  #keyboardTarget: EventTarget | null = null;
   #pointerHandler: ((e: Event) => void) | null = null;
   #keyHandler: ((e: Event) => void) | null = null;
 
@@ -43,10 +44,16 @@ export class InputQueue {
     this.#inputOffsetSec = (options.inputOffsetMs ?? 0) / 1000;
   }
 
-  /** イベントターゲットへリスナを取り付ける。 */
-  attach(target: EventTarget): void {
+  /**
+   * イベントターゲットへリスナを取り付ける。
+   * pointerdown は target に、keydown は keyboardTarget（既定 target）に登録する。
+   * canvas はフォーカス不能で keydown が届かないため、ゲーム側は keyboardTarget に
+   * window を渡すこと（PC 開発用）。
+   */
+  attach(target: EventTarget, keyboardTarget: EventTarget = target): void {
     this.detach();
     this.#target = target;
+    this.#keyboardTarget = keyboardTarget;
     this.#pointerHandler = (e: Event): void => {
       this.#push(e.timeStamp);
     };
@@ -59,7 +66,7 @@ export class InputQueue {
     };
     // pointerdown は passive で購読（preventDefault しない）。
     target.addEventListener('pointerdown', this.#pointerHandler, { passive: true });
-    target.addEventListener('keydown', this.#keyHandler);
+    keyboardTarget.addEventListener('keydown', this.#keyHandler);
   }
 
   /** リスナを取り外す。 */
@@ -70,10 +77,11 @@ export class InputQueue {
     if (this.#pointerHandler !== null) {
       this.#target.removeEventListener('pointerdown', this.#pointerHandler);
     }
-    if (this.#keyHandler !== null) {
-      this.#target.removeEventListener('keydown', this.#keyHandler);
+    if (this.#keyHandler !== null && this.#keyboardTarget !== null) {
+      this.#keyboardTarget.removeEventListener('keydown', this.#keyHandler);
     }
     this.#target = null;
+    this.#keyboardTarget = null;
     this.#pointerHandler = null;
     this.#keyHandler = null;
   }

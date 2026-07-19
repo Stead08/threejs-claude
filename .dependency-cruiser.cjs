@@ -71,6 +71,13 @@ module.exports = {
       from: {},
       to: { circular: true },
     },
+    {
+      // pnpm の隔離で解決できない import（未宣言依存への越境を含む）を検出する
+      name: 'no-unresolvable',
+      severity: 'error',
+      from: {},
+      to: { couldNotResolve: true },
+    },
   ],
   options: {
     doNotFollow: { path: 'node_modules' },

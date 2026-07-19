@@ -1,0 +1,25 @@
+[package]
+name = "rhythm-wasm"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "rhythm_wasm"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+rhythm-core = { path = "../core" }
+rhythm-synth = { path = "../synth" }
+wasm-bindgen = { workspace = true }
+js-sys = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# サンドボックス環境では GitHub Releases からの binaryen (wasm-opt) ダウンロードが
+# egress ポリシーで遮断される（403）。wasm-opt はサイズ最適化のみを担う任意の
+# ポストプロセスであり、無効化しても cdylib の出力は正しく生成される。
+# CI 等ネットワークが開いている環境では削除して最適化を有効にしてよい。
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
