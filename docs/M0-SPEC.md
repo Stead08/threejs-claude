@@ -34,12 +34,12 @@ scene-kit→ 他パッケージ依存なし（three のみ可）
 apps/web → 全部可（合成の唯一の場所）
 ```
 
-### 主要依存バージョン（package.json にはこの通り書く）
+### 主要依存バージョン（常に最新版を採用。package.json が正）
 
-- typescript ^5.8.3 / vite ^6.3.5 / @vitejs/plugin-react ^4.4.1 / vitest ^3.1.3
-- three ^0.175.0 / @types/three ^0.175.0 / troika-three-text ^0.52.4（M0 では未使用なら入れない）
-- react ^19.1.0 / react-dom ^19.1.0 / @types/react ^19.1.2 / @types/react-dom ^19.1.2
-- zustand ^5.0.4 / @biomejs/biome ^1.9.4 / dependency-cruiser ^16.10.0 / @playwright/test ^1.52.0
+- typescript ^7.0.2 / vite ^8.1.5 / @vitejs/plugin-react ^6.0.3 / vitest ^4.1.10
+- three ^0.185.1 / @types/three ^0.185.1
+- react ^19.2.7 / react-dom ^19.2.7 / @types/react ^19.2.17 / @types/react-dom ^19.2.3
+- zustand ^5.0.14 / oxlint ^1.74.0 / oxfmt ^0.59.0 / dependency-cruiser ^18.1.0 / @playwright/test ^1.61.1
 - Rust: rustysynth = "1.3" / midly = "0.5" / serde = "1"(derive) / serde_json = "1" / thiserror = "2" / wasm-bindgen = "0.2" / js-sys = "0.3"
 
 ## 1. アセット仕様（charts/）
@@ -264,7 +264,7 @@ export interface Minigame {
 
 ## 10. ルート構成ファイル（オーケストレーターが用意済み）
 
-root package.json（scripts: dev/build/build:wasm/typecheck/lint/test/test:e2e/depcruise/gen:assets）、pnpm-workspace.yaml、Cargo.toml（workspace）、biome.json、tsconfig.base.json、.dependency-cruiser.cjs、.gitignore、.github/workflows/ci.yml。**実装エージェントはルートファイルを変更しない**（変更が必要ならレポートに書く）。
+root package.json（scripts: dev/build/build:wasm/typecheck/lint/test/test:e2e/depcruise/gen:assets）、pnpm-workspace.yaml、Cargo.toml（workspace）、.oxlintrc.json、tsconfig.base.json、.dependency-cruiser.cjs、.gitignore、docs/ci-workflow.yml（GitHub App の workflows 権限がないため .github/ でなく docs/ に配置。有効化は手動移動）。**実装エージェントはルートファイルを変更しない**（変更が必要ならレポートに書く）。
 
 ## 11. CI（.github/workflows/ci.yml）
 

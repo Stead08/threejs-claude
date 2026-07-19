@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "warn"
+  },
+  "rules": {
+    "typescript/no-explicit-any": "error"
+  },
+  "ignorePatterns": [
+    "**/wasm-pkg/**",
+    "**/dist/**",
+    "**/target/**",
+    "**/node_modules/**",
+    "**/test-results/**",
+    "**/playwright-report/**"
+  ]
+}

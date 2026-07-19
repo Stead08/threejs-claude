@@ -18,6 +18,7 @@
 | 2026-07-19 | **縦持ち固定**で確定（横持ち対応はしない） |
 | 2026-07-19 | v1 ミニゲームは**「カラテや」**で確定（仕様概要 → §9） |
 | 2026-07-19 | 音は一任 → **路線 A（SF2 サブセット、GeneralUser GS 第一候補）で確定**。自作音色（路線 B）は v2 オプション |
+| 2026-07-19 | Lint は **Biome → oxlint**（+ oxfmt）に変更。ライブラリは**可能な限り最新版**を採用（TS7 / Vite8 / Vitest4 / three r185 / React 19.2） |
 
 ---
 
@@ -54,7 +55,7 @@
 | 入力 | **Pointer Events（タッチ）** | Touch Events | 統一 API・`event.timeStamp` で判定 |
 | 3D テキスト/HUD | **troika-three-text + 命令的 DOM 更新** | CSS2DRenderer | React 再レンダを踏まない |
 | ポストプロセス | **原則なし**（輪郭はインバーテッドハル等マテリアルで） | pmndrs/postprocessing | モバイル GPU・熱・電池優先 |
-| Lint/Format | **Biome** | ESLint+Prettier | 一本化・高速 |
+| Lint/Format | **oxlint + oxfmt** | Biome / ESLint+Prettier | Rust 製で高速。当初 Biome だったが oxlint へ変更（決定ログ参照） |
 | モジュール境界検査 | **package.json 依存宣言 + dependency-cruiser (CI)** | eslint-plugin-boundaries | 物理強制 + 自動検査の二段構え |
 | テスト | **cargo test（コア）+ Vitest + Playwright（モバイルエミュレーション）** | — | 判定は Rust 側で決定論テスト |
 | 配布 | **GitHub Pages + PWA（manifest/SW, M3〜）** | Cloudflare Pages | 静的で足りる。SAB が要る日が来たら CF へ |
