@@ -1,5 +1,6 @@
 // デバッグ HUD: DOM オーバレイへ直接 textContent を書き込む（React 不使用）。
 // fps / tickMs / just:safe:miss / mean±σms / 誤差ヒストグラムを 250ms 間隔で更新する。
+// プレイヤー向け HUD（game-hud.ts）が主役のため、画面下端に小さく控えめに表示する。
 
 import type { JudgeStatsAccumulator } from "./judge-stats";
 
@@ -17,13 +18,15 @@ export class DebugHud {
   constructor(parent: HTMLElement = document.body) {
     const el = document.createElement("div");
     el.style.position = "fixed";
-    el.style.top = "0";
+    el.style.bottom = "0";
+    el.style.top = "auto";
     el.style.left = "0";
     el.style.right = "0";
     el.style.padding = "4px 8px";
-    el.style.font = "11px/1.4 monospace";
+    el.style.font = "9px/1.4 monospace";
     el.style.color = "#7CFC7C";
-    el.style.background = "rgba(0,0,0,0.55)";
+    el.style.background = "rgba(0,0,0,0.35)";
+    el.style.opacity = "0.75";
     el.style.whiteSpace = "pre";
     el.style.pointerEvents = "none";
     el.style.zIndex = "1000";

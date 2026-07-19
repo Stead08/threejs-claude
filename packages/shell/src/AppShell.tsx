@@ -10,6 +10,7 @@ import { TitleScreen } from "./screens/TitleScreen";
 import { LoadingScreen } from "./screens/LoadingScreen";
 import { ResultScreen } from "./screens/ResultScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
+import { TutorialScreen } from "./screens/TutorialScreen";
 import { OrientationWarning } from "./screens/OrientationWarning";
 import { PlayHapticLayer } from "./PlayHapticLayer";
 
@@ -23,6 +24,7 @@ export interface AppShellProps {
 export function AppShell({ onStart, onRetry }: AppShellProps): ReactElement {
   const appState = useShellStore((s) => s.appState);
   const settingsOpen = useShellStore((s) => s.settingsOpen);
+  const tutorialOpen = useShellStore((s) => s.tutorialOpen);
 
   return (
     <>
@@ -31,6 +33,7 @@ export function AppShell({ onStart, onRetry }: AppShellProps): ReactElement {
       {appState === "play" && <PlayHapticLayer />}
       {appState === "result" && <ResultScreen onRetry={onRetry} />}
       {settingsOpen && appState !== "play" && <SettingsScreen />}
+      {tutorialOpen && appState !== "play" && <TutorialScreen />}
       <OrientationWarning />
     </>
   );

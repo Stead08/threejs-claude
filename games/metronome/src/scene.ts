@@ -26,6 +26,7 @@ import {
 import type { GameRenderer } from "@rhythm/scene-kit";
 import type { EngineEvent, MinigameScene } from "@rhythm/engine";
 
+import { GameHud } from "./game-hud";
 import { DebugHud } from "./hud";
 import { JudgeStatsAccumulator } from "./judge-stats";
 import { clamp, easeOutQuad, lerp } from "./math-utils";
@@ -51,6 +52,15 @@ const CUE_CAPACITY = 24;
 const STAR_CAPACITY = 8;
 
 const SHAKE_JUST_STRENGTH = 0.35;
+
+/** リング脈動のビート周波数（120BPM = 2 拍/秒）。 */
+const RING_BEATS_PER_SEC = 2;
+/** リング脈動のスケール振幅。 */
+const RING_PULSE_SCALE = 0.06;
+/** Just 判定キック（リング拡大）のスケール振幅。 */
+const RING_KICK_SCALE = 0.12;
+/** Just キックの指数減衰レート（1/秒）。 */
+const RING_KICK_DECAY_PER_SEC = 9;
 
 const COLOR_BACKGROUND = 0x11131c;
 const COLOR_GROUND = 0x27301f;
@@ -153,6 +163,7 @@ export class MetronomeScene implements MinigameScene {
   readonly #threeScene: Scene;
   readonly #cameraRig: PortraitCameraRig;
   readonly #hud: DebugHud;
+  readonly #gameHud: GameHud;
   readonly #stats = new JudgeStatsAccumulator();
   readonly #disposables: Disposable[] = [];
 
@@ -161,6 +172,11 @@ export class MetronomeScene implements MinigameScene {
 
   readonly #starPool = new ObjectPool<StarEntry>();
   readonly #starSlots: Array<StarEntry | null> = Array.from({ length: STAR_CAPACITY }, () => null);
+
+  /** ヒットリング本体（ビート脈動 / Just キックのスケール対象）。 */
+  readonly #ring: Mesh;
+  /** Just 判定キックの強度（1 → 0 へ指数減衰）。 */
+  #ringKick = 0;
 
   #lastNowSec: number | null = null;
 
@@ -201,6 +217,7 @@ export class MetronomeScene implements MinigameScene {
     const ringOutline = addOutline(ring, 1.05, COLOR_OUTLINE);
     this.#disposables.push(ringOutline.material as Disposable);
     this.#threeScene.add(ring);
+    this.#ring = ring;
 
     this.#cuePool.prealloc(CUE_CAPACITY, () => createCueEntry(this.#threeScene, this.#disposables));
     this.#starPool.prealloc(STAR_CAPACITY, () =>
@@ -208,6 +225,7 @@ export class MetronomeScene implements MinigameScene {
     );
 
     this.#hud = new DebugHud();
+    this.#gameHud = new GameHud();
   }
 
   /** GameLoop.metrics（fps/tickMs）を HUD へ反映する。MinigameScene 契約外の拡張メソッド。 */
@@ -237,6 +255,7 @@ export class MetronomeScene implements MinigameScene {
 
     this.#updateCues(dt, songPosSec);
     this.#updateStars(dt);
+    this.#updateRing(dt, songPosSec);
     this.#cameraRig.update(dt);
     this.#hud.update(nowSec, this.#stats);
 
@@ -250,6 +269,7 @@ export class MetronomeScene implements MinigameScene {
 
   dispose(): void {
     this.#hud.dispose();
+    this.#gameHud.dispose();
     for (const disposable of this.#disposables) {
       disposable.dispose();
     }
@@ -287,6 +307,11 @@ export class MetronomeScene implements MinigameScene {
       // judgment === 1 (Safe)。仕様上 Judged は Just/Safe のみ発火する。
       this.#stats.recordSafe(errorMs);
     }
+    // プレイヤー向け HUD（コンボ/判定ポップ）とリングキックも演出スロットの有無に依存させない。
+    this.#gameHud.judged(judgment);
+    if (judgment === 0) {
+      this.#ringKick = 1;
+    }
 
     const slot = findSlotByCueIndex(this.#cueSlots, cueIndex);
     if (slot === -1) {
@@ -315,6 +340,7 @@ export class MetronomeScene implements MinigameScene {
   #missCue(cueIndex: number): void {
     // 統計は演出スロットの有無に依存させない。
     this.#stats.recordMiss();
+    this.#gameHud.missed();
 
     const slot = findSlotByCueIndex(this.#cueSlots, cueIndex);
     if (slot === -1) {
@@ -421,6 +447,24 @@ export class MetronomeScene implements MinigameScene {
     entry.mesh.visible = false;
     this.#cueSlots[slot] = null;
     this.#cuePool.release(entry);
+  }
+
+  /**
+   * リングのビート脈動 + Just キック。拍頭（fract=0）で最大 → 次拍へ向けて二乗減衰する
+   * 脈動を 120BPM（2 拍/秒）に同期させ、Just 判定時は #ringKick=1 からの指数減衰分を加算する。
+   * アウトラインはリングの子（addOutline）なので親のスケールに自動追従する。
+   */
+  #updateRing(dt: number, songPosSec: number): void {
+    // Just キックはフレームレート非依存の指数減衰。
+    this.#ringKick *= Math.exp(-RING_KICK_DECAY_PER_SEC * dt);
+    let scale = 1 + RING_KICK_SCALE * this.#ringKick;
+    if (songPosSec >= 0) {
+      const beatPhase = songPosSec * RING_BEATS_PER_SEC;
+      const fract = beatPhase - Math.floor(beatPhase);
+      const pulse = (1 - fract) * (1 - fract);
+      scale += RING_PULSE_SCALE * pulse;
+    }
+    this.#ring.scale.setScalar(scale);
   }
 
   #updateStars(dt: number): void {

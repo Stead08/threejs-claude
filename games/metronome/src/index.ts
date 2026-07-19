@@ -28,6 +28,7 @@ import sf2Url from "../../../charts/dev.sf2?url";
 import overlay from "../../../charts/metronome.json";
 
 import { MetronomeScene } from "./scene";
+import { synthJustChime, synthMissThud, synthSafeTock } from "./sfx-synth";
 
 /** 曲サンプルレートの既定値（AudioContext から取得できない場合のフォールバック）。 */
 const SAMPLE_RATE_FALLBACK = 48000;
@@ -64,6 +65,9 @@ class MetronomeGame implements Minigame {
   #session: SessionHandle | null = null;
   #songBuffer: AudioBuffer | null = null;
   #tapBuffer: AudioBuffer | null = null;
+  #justSfxBuffer: AudioBuffer | null = null;
+  #safeSfxBuffer: AudioBuffer | null = null;
+  #missSfxBuffer: AudioBuffer | null = null;
   #scene: MetronomeScene | null = null;
   #canvas: HTMLCanvasElement | null = null;
   #inputQueue: InputQueue | null = null;
@@ -108,6 +112,15 @@ class MetronomeGame implements Minigame {
       tapRendered.left,
       tapRendered.right,
     );
+
+    // 判定効果音（Just/Safe/Miss）はロード時に一度だけ PCM 合成して AudioBuffer 化する
+    // （フレームループからは再生のみ行い、割り当てを発生させない）。
+    const justPcm = synthJustChime(sampleRate);
+    this.#justSfxBuffer = ctx.audio.toAudioBuffer(sampleRate, justPcm.left, justPcm.right);
+    const safePcm = synthSafeTock(sampleRate);
+    this.#safeSfxBuffer = ctx.audio.toAudioBuffer(sampleRate, safePcm.left, safePcm.right);
+    const missPcm = synthMissThud(sampleRate);
+    this.#missSfxBuffer = ctx.audio.toAudioBuffer(sampleRate, missPcm.left, missPcm.right);
     onProgress(0.95);
 
     this.#session = createSession(midi, JSON.stringify(overlay), {
@@ -199,6 +212,18 @@ class MetronomeGame implements Minigame {
       const ev = this.#decodedEvents[i];
       if (ev !== undefined) {
         scene.handleEvent(ev);
+        // 判定結果の効果音。onTap のタップ音は「押した」即時フィードバック、こちらは
+        // 「どう判定されたか」の通知という役割分担（両方鳴る）。
+        if (ev.type === 2) {
+          // Judged: a=0 が Just / a=1 が Safe。
+          const buffer = ev.a === 0 ? this.#justSfxBuffer : this.#safeSfxBuffer;
+          if (buffer !== null) {
+            ctx.audio.playSfx(buffer);
+          }
+        } else if (ev.type === 3 && this.#missSfxBuffer !== null) {
+          // AutoMiss。
+          ctx.audio.playSfx(this.#missSfxBuffer);
+        }
       }
     }
 

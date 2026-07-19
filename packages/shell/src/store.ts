@@ -41,6 +41,7 @@ export interface ShellState {
   resultJson: string | null;
   calibration: Calibration;
   settingsOpen: boolean;
+  tutorialOpen: boolean;
 
   setAppState: (appState: AppState) => void;
   setLoadProgress: (ratio: number) => void;
@@ -49,6 +50,8 @@ export interface ShellState {
   setCalibration: (calibration: Calibration) => void;
   openSettings: () => void;
   closeSettings: () => void;
+  openTutorial: () => void;
+  closeTutorial: () => void;
   /** タイトルへ戻す（もういちど用に進捗/結果をリセット）。 */
   resetToTitle: () => void;
 }
@@ -60,6 +63,7 @@ export const shellStore = createStore<ShellState>((set) => ({
   resultJson: null,
   calibration: calibrationStore.get(),
   settingsOpen: false,
+  tutorialOpen: false,
 
   setAppState: (appState): void => set({ appState }),
   setLoadProgress: (ratio): void => set({ loadProgress: ratio }),
@@ -70,6 +74,8 @@ export const shellStore = createStore<ShellState>((set) => ({
   },
   openSettings: (): void => set({ settingsOpen: true }),
   closeSettings: (): void => set({ settingsOpen: false }),
+  openTutorial: (): void => set({ tutorialOpen: true }),
+  closeTutorial: (): void => set({ tutorialOpen: false }),
   resetToTitle: (): void => set({ appState: "title", loadProgress: 0, resultJson: null }),
 }));
 

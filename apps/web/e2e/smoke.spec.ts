@@ -43,6 +43,15 @@ test.describe("metronome smoke", () => {
   test("タイトル → タップ → ローディング → プレイに到達する", async ({ page }) => {
     await page.goto("/");
 
+    // 初回訪問（e2e は毎回フレッシュな context = localStorage 空）ではチュートリアルが
+    // 自動で開く。内容を確認して「わかった！」で閉じてからタイトル操作へ進む。
+    // 注: 「あそびかた」はタイトル側のボタンにも存在するため、チュートリアル固有の
+    // 「わかった！」だけをセレクタに使う（strict mode の重複マッチ回避）。
+    const tutorialClose = page.getByText("わかった！");
+    await expect(tutorialClose).toBeVisible();
+    await tutorialClose.tap();
+    await expect(tutorialClose).toHaveCount(0);
+
     // タイトル画面: ロゴ文字と「タップではじめる」が見える（画面全体がボタン）。
     await expect(page.getByText("カラテや")).toBeVisible();
     const startButton = page.getByText("タップではじめる");

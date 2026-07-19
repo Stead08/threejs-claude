@@ -21,4 +21,7 @@ export { TitleScreen } from "./screens/TitleScreen";
 export { LoadingScreen } from "./screens/LoadingScreen";
 export { ResultScreen } from "./screens/ResultScreen";
 export { SettingsScreen } from "./screens/SettingsScreen";
+export { TutorialScreen, TUTORIAL_SEEN_KEY } from "./screens/TutorialScreen";
 export { OrientationWarning } from "./screens/OrientationWarning";
+
+export { uiTapSound, uiConfirmSound, playResultJingle } from "./ui-sfx";
