@@ -22,12 +22,17 @@ import {
 // 以降のモジュール評価時エラー（要素欠落等）も window error 経由で拾えるよう最初に設置する。
 initTelemetry();
 
-/** ゲームレジストリ。動的 import によりコード分割される（M0 は metronome の 1 本のみ）。 */
+/** ゲームレジストリ。動的 import によりコード分割される。 */
 const games: Record<string, () => Promise<{ default: Minigame }>> = {
   metronome: () => import("@rhythm/game-metronome"),
+  uraomote: () => import("@rhythm/game-uraomote"),
 };
 
-const ACTIVE_GAME_ID = "metronome";
+/** 起動ゲームの既定 ID。`?game=<id>` でレジストリ内のゲームへ切り替えられる。 */
+const DEFAULT_GAME_ID = "uraomote";
+const requestedGameId = new URLSearchParams(window.location.search).get("game");
+const ACTIVE_GAME_ID =
+  requestedGameId !== null && requestedGameId in games ? requestedGameId : DEFAULT_GAME_ID;
 const MAX_DEVICE_PIXEL_RATIO = 2;
 
 function requireCanvas(id: string): HTMLCanvasElement {

@@ -14,6 +14,7 @@
   "dependencies": {
     "@rhythm/engine": "workspace:*",
     "@rhythm/game-metronome": "workspace:*",
+    "@rhythm/game-uraomote": "workspace:*",
     "@rhythm/shell": "workspace:*",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

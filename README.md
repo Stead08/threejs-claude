@@ -97,6 +97,7 @@ packages/engine/     GameLoop / AudioEngine / AudioClock / InputQueue / wasm ブ
 packages/scene-kit/  three 共通部品（トゥーン・輪郭・カメラリグ・プール）
 packages/shell/      React シェル（タイトル/設定/リザルト）+ Zustand store
 games/metronome/     dev 用ミニゲーム（M0 縦切り・契約実証）
+games/uraomote/      ウラオモテ（表拍⇔裏拍が入れ替わるリズムゲーム）
 crates/core/         Conductor / 譜面コンパイル / 判定 / 統計（wasm 非依存・決定論）
 crates/synth/        midly + rustysynth: MIDI → PCM オフラインレンダ
 crates/wasm/         wasm-bindgen 結合層
@@ -110,3 +111,9 @@ charts/              MIDI + オーバレイ JSON + SF2
 
 M0（メトロノーム縦切り）実装済み: タイトル → ロード（Worker 内 Wasm シンセレンダ・進捗表示）→
 プレイ（タップ判定・誤差 HUD）→ リザルト（ランク判定）。次は実機での誤差分布計測（M0 Done 条件）。
+
+2 本目のミニゲーム「ウラオモテ」を追加（既定ゲーム。`?game=metronome` で旧ゲームに切替可能）:
+リズム天国のウラオモテ風に、セクションごとに表拍タップ⇔裏拍タップが入れ替わる。
+楽曲は BPM116 / A マイナーのオリジナル（`gen:assets` の `gen_midi --song uraomote` で生成、
+音色は dev.sf2 に追加した三角波ベース・サイン波コード・キック/クラップ/ハイハットで演奏）。
+切替の直前には 16 分音符の上昇/下降リフとクラップロールで「ウラ!／オモテ!」を予告する。
