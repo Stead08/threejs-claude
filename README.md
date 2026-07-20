@@ -2,6 +2,7 @@
 
 リズム天国ライクなコール＆レスポンス型 3D リズムゲーム。スマホ縦持ち固定・タップ 1 動詞。
 計画は [docs/PLAN.md](docs/PLAN.md)、M0 の実装契約は [docs/M0-SPEC.md](docs/M0-SPEC.md) を参照。
+開発時の依存境界・コマンド・落とし穴は [CLAUDE.md](CLAUDE.md) にまとめている。
 
 ## 技術スタック
 
@@ -32,7 +33,7 @@ pnpm dev                         # vite dev server (--host 付き、実機は同
 | `pnpm build:wasm`                          | wasm-pack ビルド（TS 側より先に一度実行が必要）                              |
 | `pnpm typecheck`                           | 全パッケージ tsc --noEmit（TypeScript 7）                                    |
 | `pnpm lint` / `pnpm format`                | oxlint / oxfmt                                                               |
-| `pnpm test`                                | Vitest（packages/engine, packages/shell）                                    |
+| `pnpm test`                                | Vitest（packages/*・games/* の各 vitest.config.ts）                          |
 | `pnpm test:e2e`                            | Playwright スモーク（要 `pnpm build`）                                       |
 | `pnpm depcruise`                           | モジュール境界検査                                                           |
 | `cargo test --workspace`                   | Rust テスト（判定・譜面・シンセ・SF2 生成）                                  |
